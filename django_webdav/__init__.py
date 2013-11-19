@@ -16,13 +16,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with django-webdav.  If not, see <http://www.gnu.org/licenses/>.
 
-import os, datetime, mimetypes, time, shutil, urllib, urlparse, httplib, re, calendar
+import os, datetime, mimetypes, time, shutil, urllib, urlparse, httplib, re, calendar, hashlib
 from xml.etree import ElementTree
 from django.conf import settings
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, \
 HttpResponseNotAllowed, HttpResponseBadRequest, HttpResponseNotModified
 from django.http import Http404 as HttpNotFound
-from django.utils import hashcompat, synch
+from django.utils import synch
 from django.utils.http import http_date, parse_etags
 from django.utils.encoding import smart_unicode
 from django.shortcuts import render_to_response
@@ -347,7 +347,7 @@ class DavResource(object):
         absolute path modified time and size. Can be overridden if resources are not stored in a
         file system. The etag is used to detect changes to a resource between HTTP calls. So this
         needs to change if a resource is modified.'''
-        hash = hashcompat.md5_constructor()
+        hash = hashlib.md5()
         hash.update(self.get_abs_path().encode('utf-8'))
         hash.update(str(self.get_mtime_stamp()))
         hash.update(str(self.get_size()))
