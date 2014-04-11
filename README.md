@@ -1,4 +1,4 @@
-django-webdav
+djangodav
 =============
 
-clone of original https://code.google.com/p/django-webdav/ with some upgrades
+clone of sirmmo/django-webdav clone of original https://code.google.com/p/django-webdav/ with some upgrades
