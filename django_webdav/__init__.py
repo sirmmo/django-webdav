@@ -113,7 +113,7 @@ class HttpError(Exception):
 
     def get_response(self):
         '''Creates an HTTPResponse for the given status code.'''
-        return HttpResponse(self.message, status_code=self.status_code)
+        return HttpResponse(self.message, status=self.status_code)
 
 
 class HttpCreated(HttpError):
