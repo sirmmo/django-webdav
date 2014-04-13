@@ -61,7 +61,7 @@ class DavServer(object):
         """Return permission as DavAcl object. A DavACL should have the following attributes:
         read, write, delete, create, relocate, list. By default we implement a read-only
         system."""
-        return self.acl_class(list=True, read=True, all=False)
+        return self.acl_class(listing=True, read=True, full=False)
 
     def get_resource(self, path):
         """Return a DavResource object to represent the given path."""
@@ -135,7 +135,7 @@ class DavServer(object):
         if not res.exists():
             return HttpResponseNotFound()
         if not head and res.isdir():
-            if not acl.list:
+            if not acl.listing:
                 return HttpResponseForbidden()
             return render_to_response('djangodav/index.html', {'res': res})
         else:
@@ -304,7 +304,7 @@ class DavServer(object):
         if not res.exists():
             return HttpResponseNotFound()
         acl = self.get_access(res.get_abs_path())
-        if not acl.list:
+        if not acl.listing:
             return HttpResponseForbidden()
         depth = self.get_depth()
         names_only, props = False, []
