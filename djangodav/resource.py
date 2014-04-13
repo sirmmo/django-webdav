@@ -26,27 +26,97 @@ import shutil
 from djangodav.utils import safe_join, url_join
 
 
-class DavResource(object):
-    """Implements an interface to the file system. This can be subclassed to provide
-    a virtual file system (like say in MySQL). This default implementation simply uses
-    python's os library to do most of the work."""
+class BaseDavResource(object):
     def __init__(self, server, path):
         self.server = server
         self.root = server.get_root()
         # Trailing / messes with dirname and basename.
         while path.endswith('/'):
             path = path[:-1]
-        self.path = path
-
-    def get_path(self):
-        """Return the path of the resource relative to the root."""
-        return self.path
 
     def get_abs_path(self):
         """Return the absolute path of the resource. Used internally to interface with
         an actual file system. If you override all other methods, this one will not
         be used."""
         return safe_join(self.root, self.path)
+
+    def get_url(self):
+        return url_join(self.server.request.get_base_url(), self.path)
+
+    def get_parent(self):
+        return self.__class__(self.server, self.get_dirname())
+
+    def get_descendants(self, depth=1, include_self=True):
+        """Return an iterator of all descendants of this resource."""
+        if include_self:
+            yield self
+        # If depth is less than 0, then it started out as -1.
+        # We need to keep recursing until we hit 0, or forever
+        # in case of infinity.
+        if depth != 0:
+            for child in self.get_children():
+                for desc in child.get_descendants(depth=depth-1, include_self=True):
+                    yield desc
+
+    def copy(self,  destination, depth=0):
+        raise NotImplementedError()
+
+    def move(self,  destination):
+        raise NotImplementedError()
+
+    def write(self, content):
+        raise NotImplementedError()
+
+    def read(self):
+        raise NotImplementedError()
+
+    def isdir(self):
+        raise NotImplementedError()
+
+    def isfile(self):
+        raise NotImplementedError()
+
+    def exists(self):
+        raise NotImplementedError()
+
+    def get_name(self):
+        raise NotImplementedError()
+
+    def get_dirname(self):
+        raise NotImplementedError()
+
+    def get_size(self):
+        raise NotImplementedError()
+
+    def get_ctime_stamp(self):
+        raise NotImplementedError()
+
+    def get_ctime(self):
+        raise NotImplementedError()
+
+    def get_mtime_stamp(self):
+        raise NotImplementedError()
+
+    def get_mtime(self):
+        raise NotImplementedError()
+
+    def get_children(self):
+        raise NotImplementedError()
+
+    def delete(self):
+        raise NotImplementedError()
+
+    def mkdir(self):
+        raise NotImplementedError()
+
+    def get_etag(self):
+        raise NotImplementedError()
+
+
+class FSDavResource(BaseDavResource):
+    """Implements an interface to the file system. This can be subclassed to provide
+    a virtual file system (like say in MySQL). This default implementation simply uses
+    python's os library to do most of the work."""
 
     def isdir(self):
         """Return True if this resource is a directory (collection in WebDAV parlance)."""
@@ -89,33 +159,11 @@ class DavResource(object):
         """Return the modified time as datetime object."""
         return datetime.datetime.fromtimestamp(self.get_mtime_stamp())
 
-    def get_url(self):
-        """Return the url of the resource. This uses the request base url, so it
-        is likely to work even for an overridden DavResource class."""
-        return url_join(self.server.request.get_base_url(), self.path)
-
-    def get_parent(self):
-        """Return a DavResource for this resource's parent."""
-        return self.__class__(self.server, os.path.dirname(self.path))
-
-    # TODO: combine this and get_children()
-    def get_descendants(self, depth=1, include_self=True):
-        """Return an iterator of all descendants of this resource."""
-        if include_self:
-            yield self
-        # If depth is less than 0, then it started out as -1.
-        # We need to keep recursing until we hit 0, or forever
-        # in case of infinity.
-        if depth != 0:
-            for child in self.get_children():
-                for desc in child.get_descendants(depth=depth-1, include_self=True):
-                    yield desc
-
     # TODO: combine this and get_descendants()
     def get_children(self):
         """Return an iterator of all direct children of this resource."""
         for child in os.listdir(self.get_abs_path()):
-            yield self.__class__(self.server, os.path.join(self.get_path(), child))
+            yield self.__class__(self.server, os.path.join(self.path, child))
 
     def write(self, content):
         with file(self.get_abs_path(), 'w') as f:
@@ -153,7 +201,7 @@ class DavResource(object):
             # in case of infinity.
             if depth != 0:
                 for child in self.get_children():
-                    child.copy(self.__class__(self.server, safe_join(destination.get_path(), child.get_name())),
+                    child.copy(self.__class__(self.server, safe_join(destination.path, child.get_name())),
                                depth=depth-1)
         else:
             if destination.isdir():
@@ -169,7 +217,7 @@ class DavResource(object):
         if self.isdir():
             destination.mkdir()
             for child in self.get_children():
-                child.move(self.__class__(self.server, safe_join(destination.get_path(), child.get_name())))
+                child.move(self.__class__(self.server, safe_join(destination.path, child.get_name())))
             self.delete()
         else:
             os.rename(self.get_abs_path(), destination.get_abs_path())

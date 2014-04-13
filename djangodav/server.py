@@ -35,7 +35,7 @@ from djangodav.response import ResponseException, HttpResponsePreconditionFailed
 from djangodav.lock import DavLock
 from djangodav.property import DavProperty
 from djangodav.request import DavRequest
-from djangodav.resource import DavResource
+from djangodav.resource import FSDavResource
 from djangodav.utils import parse_time, url_join
 
 
@@ -43,7 +43,7 @@ PATTERN_IF_DELIMITER = re.compile(r'(<([^>]+)>)|(\(([^\)]+)\))')
 
 
 class DavServer(object):
-    def __init__(self, request, path, property_class=DavProperty, resource_class=DavResource, lock_class=DavLock,
+    def __init__(self, request, path, property_class=DavProperty, resource_class=FSDavResource, lock_class=DavLock,
                  acl_class=DavAcl):
         self.request = DavRequest(self, request, path)
         self.resource_class = resource_class
