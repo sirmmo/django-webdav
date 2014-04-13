@@ -44,10 +44,6 @@ class HttpCreated(HttpError):
     status_code = httplib.CREATED
 
 
-class HttpResponseCreated(HttpResponse):
-    status_code = httplib.CREATED
-
-
 class HttpNoContent(HttpError):
     status_code = httplib.NO_CONTENT
 
@@ -56,15 +52,7 @@ class HttpNotModified(HttpError):
     status_code = httplib.NOT_MODIFIED
 
 
-class HttpResponseNoContent(HttpResponse):
-    status_code = httplib.NO_CONTENT
-
-
 class HttpMultiStatus(HttpError):
-    status_code = httplib.MULTI_STATUS
-
-
-class HttpResponseMultiStatus(HttpResponse):
     status_code = httplib.MULTI_STATUS
 
 
@@ -84,10 +72,6 @@ class HttpConflict(HttpError):
     status_code = httplib.CONFLICT
 
 
-class HttpResponseConflict(HttpResponse):
-    status_code = httplib.CONFLICT
-
-
 class HttpPreconditionFailed(HttpError):
     status_code = httplib.PRECONDITION_FAILED
 
@@ -96,21 +80,35 @@ class HttpResponsePreconditionFailed(HttpResponse):
     status_code = httplib.PRECONDITION_FAILED
 
 
-class HttpMediatypeNotSupported(HttpError):
-    status_code = httplib.UNSUPPORTED_MEDIA_TYPE
+class HttpBadGateway(HttpError):
+    status_code = httplib.BAD_GATEWAY
 
 
 class HttpResponseMediatypeNotSupported(HttpResponse):
     status_code = httplib.UNSUPPORTED_MEDIA_TYPE
 
 
+class HttpResponseMultiStatus(HttpResponse):
+    status_code = httplib.MULTI_STATUS
+
+
 class HttpResponseNotImplemented(HttpResponse):
     status_code = httplib.MULTI_STATUS
 
 
-class HttpBadGateway(HttpError):
-    status_code = httplib.BAD_GATEWAY
-
-
 class HttpResponseBadGateway(HttpResponse):
     status_code = httplib.BAD_GATEWAY
+
+
+class HttpResponseCreated(HttpResponse):
+    status_code = httplib.CREATED
+
+
+class HttpResponseNoContent(HttpResponse):
+    status_code = httplib.NO_CONTENT
+
+class HttpMediatypeNotSupported(HttpError):
+    status_code = httplib.UNSUPPORTED_MEDIA_TYPE
+
+class HttpResponseConflict(HttpResponse):
+    status_code = httplib.CONFLICT
