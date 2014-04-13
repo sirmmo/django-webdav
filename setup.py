@@ -38,8 +38,7 @@ with this such as django-digest etc. to provide a powerful WebDAV server.
     author='Alexander Klimenko',
     author_email='alex@erix.ru',
     url='https://github.com/meteozond/djangodav',
-    packages=['djangodav', 'djangodav.templates'],
-              #'djangodav.samples'],
+    packages=['djangodav'],
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Environment :: Web Environment',
@@ -48,6 +47,7 @@ with this such as django-digest etc. to provide a powerful WebDAV server.
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Topic :: Software Development :: Libraries :: Python Modules'
-     ],
+    ],
+    include_package_data=True,
     zip_safe=False,
 )
