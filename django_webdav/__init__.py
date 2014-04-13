@@ -619,7 +619,6 @@ class DavServer(object):
                 cond_if = '<*>' + cond_if
             #for (tmpurl, url, tmpcontent, content) in PATTERN_IF_DELIMITER.findall(cond_if):
 
-
     def get_response(self):
         handler = getattr(self, 'do' + self.request.method, None)
         try:
@@ -628,8 +627,6 @@ class DavServer(object):
             return handler()
         except HttpError, e:
             return e.get_response()
-        except Exception, e:
-            return HttpError(str(e)).get_response()
 
     def doGET(self, head=False):
         res = self.get_resource(self.request.path)
