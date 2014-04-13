@@ -566,10 +566,10 @@ class DavServer(object):
         '''Return a DavResource object to represent the given path.'''
         return self.resource_class(self, path)
 
-    def get_depth(self, default=-1):
-        depth = self.request.META.get('HTTP_DEPTH', default).lower()
+    def get_depth(self, default='infinity'):
+        depth = str(self.request.META.get('HTTP_DEPTH', default)).lower()
         if not depth in ('0', '1', 'infinity'):
-            raise HttpBadRequest('Invalid depth header value %s' % depth)
+            raise HttpResponseBadRequest('Invalid depth header value %s' % depth)
         if depth == 'infinity':
             depth = -1
         else:
