@@ -454,7 +454,7 @@ class DavProperty(object):
         finally:
             self.lock.writer_leaves()
 
-    def del_props(self, res, *name):
+    def del_props(self, res, *names):
         self.lock.writer_enters()
         try:
             avail_names = self.get_prop_names(res)
