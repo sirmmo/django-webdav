@@ -32,7 +32,7 @@ try:
 except ImportError:
     from email.Utils import parsedate_tz
 
-PATTERN_IF_DELIMITER = re.compile(r'(\<([^>]+)\>)|(\(([^\)]+)\))')
+PATTERN_IF_DELIMITER = re.compile(r'(<([^>]+)\>)|(\(([^\)]+)\))')
 
 # Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
 FORMAT_RFC_822 = '%a, %d %b %Y %H:%M:%S GMT'
