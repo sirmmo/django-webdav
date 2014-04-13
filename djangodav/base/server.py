@@ -25,6 +25,7 @@ class BaseDavServer(object):
     request_class = DavRequest
     acl_class = DavAcl
     property_class = DavProperty
+    template_name = 'djangodav/index.html'
 
     def __init__(self, request, path):
         self.request = self.request_class(self, request, path)
@@ -111,7 +112,7 @@ class BaseDavServer(object):
         if not head and res.isdir():
             if not acl.listing:
                 return HttpResponseForbidden()
-            return render_to_response('djangodav/index.html', {'res': res})
+            return render_to_response(self.template_name, {'res': res})
         else:
             if not acl.read:
                 return HttpResponseForbidden()
