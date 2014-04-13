@@ -73,6 +73,7 @@ def ns_join(ns, name):
     '''Joins a namespace and property name into clark notation.'''
     return '{%s:}%s' % (ns, name)
 
+
 def rfc3339_date(date):
   if not date:
       return ''
@@ -83,7 +84,8 @@ def rfc3339_date(date):
     date += datetime.timedelta(seconds=time.altzone)
   return date.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-def parse_time(time):
+
+def parse_time(timestring):
     value = None
     for fmt in (FORMAT_RFC_822, FORMAT_RFC_850, FORMAT_ASC):
         try:
@@ -98,7 +100,7 @@ def parse_time(time):
             pass
     if value is None:
         return
-    return calendar.timegm(result)
+    return calendar.timegm(value)
 
 
 # When possible, code returns an HTTPResponse sub-class. In some situations, we want to be able
