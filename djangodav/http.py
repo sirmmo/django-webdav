@@ -107,8 +107,10 @@ class HttpResponseCreated(HttpResponse):
 class HttpResponseNoContent(HttpResponse):
     status_code = httplib.NO_CONTENT
 
+
 class HttpMediatypeNotSupported(HttpError):
     status_code = httplib.UNSUPPORTED_MEDIA_TYPE
+
 
 class HttpResponseConflict(HttpResponse):
     status_code = httplib.CONFLICT
