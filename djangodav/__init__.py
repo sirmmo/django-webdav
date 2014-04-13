@@ -735,7 +735,7 @@ class DavServer(object):
     def doCOPY(self, move=False):
         res = self.get_resource(self.request.path)
         if not res.exists():
-            return HtpResponseNotFound()
+            return HttpResponseNotFound()
         acl = self.get_access(res.get_abs_path())
         if not acl.relocate:
             return HttpResponseForbidden()
