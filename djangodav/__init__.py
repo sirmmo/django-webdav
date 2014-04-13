@@ -41,9 +41,10 @@ FORMAT_RFC_850 = '%A %d-%b-%y %H:%M:%S GMT'
 # Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
 FORMAT_ASC = '%a %b %d %H:%M:%S %Y'
 
+
 def safe_join(root, *paths):
-    '''The provided os.path.join() does not work as desired. Any path starting with /
-    will simply be returned rather than actually being joined with the other elements.'''
+    """The provided os.path.join() does not work as desired. Any path starting with /
+    will simply be returned rather than actually being joined with the other elements."""
     if not root.startswith('/'):
         root = '/' + root
     for path in paths:
@@ -54,35 +55,38 @@ def safe_join(root, *paths):
         root += '/' + path
     return root
 
+
 def url_join(base, *paths):
-    '''Assuming base is the scheme and host (and perhaps path) we will join the remaining
-    path elements to it.'''
+    """Assuming base is the scheme and host (and perhaps path) we will join the remaining
+    path elements to it."""
     paths = safe_join(*paths)
     while base.endswith('/'):
         base = base[:-1]
     return base + paths
 
+
 def ns_split(tag):
-    '''Splits the namespace and property name from a clark notation property name.'''
+    """Splits the namespace and property name from a clark notation property name."""
     if tag.startswith("{") and "}" in tag:
         ns, name = tag.split("}", 1)
-        return (ns[1:-1], name)
-    return ("", tag)
+        return ns[1:-1], name
+    return "", tag
+
 
 def ns_join(ns, name):
-    '''Joins a namespace and property name into clark notation.'''
+    """Joins a namespace and property name into clark notation."""
     return '{%s:}%s' % (ns, name)
 
 
 def rfc3339_date(date):
-  if not date:
-      return ''
-  if not isinstance(date, datetime.date):
-      date = datetime.date.fromtimestamp(date)
-  date = date + datetime.timedelta(seconds=-time.timezone)
-  if time.daylight:
-    date += datetime.timedelta(seconds=time.altzone)
-  return date.strftime('%Y-%m-%dT%H:%M:%SZ')
+    if not date:
+        return ''
+    if not isinstance(date, datetime.date):
+        date = datetime.date.fromtimestamp(date)
+    date = date + datetime.timedelta(seconds=-time.timezone)
+    if time.daylight:
+        date += datetime.timedelta(seconds=time.altzone)
+    return date.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 def parse_time(timestring):
@@ -109,13 +113,13 @@ def parse_time(timestring):
 
 
 class HttpError(Exception):
-    '''A base HTTP error class. This allows utility functions to raise an HTTP error so that
+    """A base HTTP error class. This allows utility functions to raise an HTTP error so that
     when used inside a handler, the handler can simply call the utility and the correct
-    HttpResponse will be issued to the client.'''
+    HttpResponse will be issued to the client."""
     status_code = 500
 
     def get_response(self):
-        '''Creates an HTTPResponse for the given status code.'''
+        """Creates an HTTPResponse for the given status code."""
         return HttpResponse(self.message, status=self.status_code)
 
 
@@ -196,24 +200,24 @@ class HttpResponseBadGateway(HttpResponse):
 
 
 class DavAcl(object):
-    '''Represents all the permissions that a user might have on a resource. This
-    makes it easy to implement virtual permissions.'''
-    def __init__(self, read=True, write=True, delete=True, create=True, relocate=True, list=True, all=None):
+    """Represents all the permissions that a user might have on a resource. This
+    makes it easy to implement virtual permissions."""
+    def __init__(self, read=True, write=True, delete=True, create=True, relocate=True, _list=True, _all=None):
         if not all is None:
             self.read = self.write = self.delete = \
-            self.create = self.relocate = self.list = all
+                self.create = self.relocate = self.list = _all
         self.read = read
         self.write = write
         self.delete = delete
         self.create = create
         self.relocate = relocate
-        self.list = list
+        self.list = _list
 
 
 class DavResource(object):
-    '''Implements an interface to the file system. This can be subclassed to provide
+    """Implements an interface to the file system. This can be subclassed to provide
     a virtual file system (like say in MySQL). This default implementation simply uses
-    python's os library to do most of the work.'''
+    python's os library to do most of the work."""
     def __init__(self, server, path):
         self.server = server
         self.root = server.get_root()
@@ -223,68 +227,68 @@ class DavResource(object):
         self.path = path
 
     def get_path(self):
-        '''Return the path of the resource relative to the root.'''
+        """Return the path of the resource relative to the root."""
         return self.path
 
     def get_abs_path(self):
-        '''Return the absolute path of the resource. Used internally to interface with
+        """Return the absolute path of the resource. Used internally to interface with
         an actual file system. If you override all other methods, this one will not
-        be used.'''
+        be used."""
         return safe_join(self.root, self.path)
 
     def isdir(self):
-        '''Return True if this resource is a directory (collection in WebDAV parlance).'''
+        """Return True if this resource is a directory (collection in WebDAV parlance)."""
         return os.path.isdir(self.get_abs_path())
 
     def isfile(self):
-        '''Return True if this resource is a file (resource in WebDAV parlance).'''
+        """Return True if this resource is a file (resource in WebDAV parlance)."""
         return os.path.isfile(self.get_abs_path())
 
     def exists(self):
-        '''Return True if this resource exists.'''
+        """Return True if this resource exists."""
         return os.path.exists(self.get_abs_path())
 
     def get_name(self):
-        '''Return the name of the resource (without path information).'''
+        """Return the name of the resource (without path information)."""
         # No need to use absolute path here
         return os.path.basename(self.path)
 
     def get_dirname(self):
-        '''Return the resource's parent directory's absolute path.'''
+        """Return the resource's parent directory's absolute path."""
         return os.path.dirname(self.get_abs_path())
 
     def get_size(self):
-        '''Return the size of the resource in bytes.'''
+        """Return the size of the resource in bytes."""
         return os.path.getsize(self.get_abs_path())
 
     def get_ctime_stamp(self):
-        '''Return the create time as UNIX timestamp.'''
+        """Return the create time as UNIX timestamp."""
         return os.stat(self.get_abs_path()).st_ctime
 
     def get_ctime(self):
-        '''Return the create time as datetime object.'''
+        """Return the create time as datetime object."""
         return datetime.datetime.fromtimestamp(self.get_ctime_stamp())
 
     def get_mtime_stamp(self):
-        '''Return the modified time as UNIX timestamp.'''
+        """Return the modified time as UNIX timestamp."""
         return os.stat(self.get_abs_path()).st_mtime
 
     def get_mtime(self):
-        '''Return the modified time as datetime object.'''
+        """Return the modified time as datetime object."""
         return datetime.datetime.fromtimestamp(self.get_mtime_stamp())
 
     def get_url(self):
-        '''Return the url of the resource. This uses the request base url, so it
-        is likely to work even for an overridden DavResource class.'''
+        """Return the url of the resource. This uses the request base url, so it
+        is likely to work even for an overridden DavResource class."""
         return url_join(self.server.request.get_base_url(), self.path)
 
     def get_parent(self):
-        '''Return a DavResource for this resource's parent.'''
+        """Return a DavResource for this resource's parent."""
         return self.__class__(self.server, os.path.dirname(self.path))
 
     # TODO: combine this and get_children()
     def get_descendants(self, depth=1, include_self=True):
-        '''Return an iterator of all descendants of this resource.'''
+        """Return an iterator of all descendants of this resource."""
         if include_self:
             yield self
         # If depth is less than 0, then it started out as -1.
@@ -297,16 +301,16 @@ class DavResource(object):
 
     # TODO: combine this and get_descendants()
     def get_children(self):
-        '''Return an iterator of all direct children of this resource.'''
+        """Return an iterator of all direct children of this resource."""
         for child in os.listdir(self.get_abs_path()):
             yield self.__class__(self.server, os.path.join(self.get_path(), child))
 
     def open(self, mode):
-        '''Open the resource, mode is the same as the Python file() object.'''
+        """Open the resource, mode is the same as the Python file() object."""
         return file(self.get_abs_path(), mode)
 
     def delete(self):
-        '''Delete the resource, recursive is implied.'''
+        """Delete the resource, recursive is implied."""
         if self.isdir():
             for child in self.get_children():
                 child.delete()
@@ -315,14 +319,14 @@ class DavResource(object):
             os.remove(self.get_abs_path())
 
     def mkdir(self):
-        '''Create a directory in the location of this resource.'''
+        """Create a directory in the location of this resource."""
         os.mkdir(self.get_abs_path())
 
     def copy(self, destination, depth=0):
-        '''Called to copy a resource to a new location. Overwrite is assumed, the DAV server
+        """Called to copy a resource to a new location. Overwrite is assumed, the DAV server
         will refuse to copy to an existing resource otherwise. This method needs to gracefully
         handle a pre-existing destination of any type. It also needs to respect the depth
-        parameter. depth == -1 is infinity.'''
+        parameter. depth == -1 is infinity."""
         if self.isdir():
             if destination.isfile():
                 destination.delete()
@@ -333,16 +337,17 @@ class DavResource(object):
             # in case of infinity.
             if depth != 0:
                 for child in self.get_children():
-                    child.copy(self.__class__(self.server, safe_join(destination.get_path(), child.get_name())), depth=depth-1)
+                    child.copy(self.__class__(self.server, safe_join(destination.get_path(), child.get_name())),
+                               depth=depth-1)
         else:
             if destination.isdir():
                 destination.delete()
             shutil.copy(self.get_abs_path(), destination.get_abs_path())
 
     def move(self, destination):
-        '''Called to move a resource to a new location. Overwrite is assumed, the DAV server
+        """Called to move a resource to a new location. Overwrite is assumed, the DAV server
         will refuse to move to an existing resource otherwise. This method needs to gracefully
-        handle a pre-existing destination of any type.'''
+        handle a pre-existing destination of any type."""
         if destination.exists():
             destination.delete()
         if self.isdir():
@@ -354,20 +359,20 @@ class DavResource(object):
             os.rename(self.get_abs_path(), destination.get_abs_path())
 
     def get_etag(self):
-        '''Calculate an etag for this resource. The default implementation uses an md5 sub of the
+        """Calculate an etag for this resource. The default implementation uses an md5 sub of the
         absolute path modified time and size. Can be overridden if resources are not stored in a
         file system. The etag is used to detect changes to a resource between HTTP calls. So this
-        needs to change if a resource is modified.'''
-        hash = hashlib.md5()
-        hash.update(self.get_abs_path().encode('utf-8'))
-        hash.update(str(self.get_mtime_stamp()))
-        hash.update(str(self.get_size()))
-        return hash.hexdigest()
+        needs to change if a resource is modified."""
+        hashsum = hashlib.md5()
+        hashsum.update(self.get_abs_path().encode('utf-8'))
+        hashsum.update(str(self.get_mtime_stamp()))
+        hashsum.update(str(self.get_size()))
+        return hashsum.hexdigest()
 
 
 class DavRequest(object):
-    '''Wraps a Django request object, and extends it with some WebDAV
-    specific methods.'''
+    """Wraps a Django request object, and extends it with some WebDAV
+    specific methods."""
     def __init__(self, server, request, path):
         self.server = server
         self.request = request
@@ -377,16 +382,16 @@ class DavRequest(object):
         return getattr(self.request, name)
 
     def get_base(self):
-        '''Assuming the view is configured via urls.py to pass the path portion using
+        """Assuming the view is configured via urls.py to pass the path portion using
         a regular expression, we can subtract the provided path from the full request
         path to determine our base. This base is what we can make all absolute URLs
-        from.'''
+        from."""
         return self.META['PATH_INFO'][:-len(self.path)]
 
     def get_base_url(self):
-        '''Build a base URL for our request. Uses the base path provided by get_base()
+        """Build a base URL for our request. Uses the base path provided by get_base()
         and the scheme/host etc. in the request to build a URL that can be used to
-        build absolute URLs for WebDAV resources.'''
+        build absolute URLs for WebDAV resources."""
         return self.build_absolute_uri(self.get_base())
 
 
@@ -404,15 +409,15 @@ class DavProperty(object):
         return []
 
     def get_dead_value(self, res, name):
-        '''Implements "dead" property retrival. Thread synchronization is handled outside this method.'''
+        """Implements "dead" property retrival. Thread synchronization is handled outside this method."""
         return
 
     def set_dead_value(self, res, name, value):
-        '''Implements "dead" property storage. Thread synchronization is handled outside this method.'''
+        """Implements "dead" property storage. Thread synchronization is handled outside this method."""
         return
 
     def del_dead_prop(self, res, name):
-        '''Implements "dead" property removal. Thread synchronizatioin is handled outside this method.'''
+        """Implements "dead" property removal. Thread synchronizatioin is handled outside this method."""
         return
 
     def get_prop_names(self, res, *names):
@@ -489,8 +494,8 @@ class DavProperty(object):
             self.lock.writer_leaves()
 
     def get_propstat(self, res, el, *names):
-        '''Returns the XML representation of a resource's properties. Thread synchronization is handled
-        in the get_prop_value() method individually for each property.'''
+        """Returns the XML representation of a resource's properties. Thread synchronization is handled
+        in the get_prop_value() method individually for each property."""
         el404, el200 = None, None
         avail_names = self.get_prop_names(res)
         if not names:
@@ -521,7 +526,7 @@ class DavLock(object):
         self.lock = synch.RWLock()
 
     def get(self, res):
-        '''Gets all active locks for the requested resource. Returns a list of locks.'''
+        """Gets all active locks for the requested resource. Returns a list of locks."""
         self.lock.reader_enters()
         try:
             pass
@@ -529,7 +534,7 @@ class DavLock(object):
             self.lock.reader_leaves()
 
     def acquire(self, res, type, scope, depth, owner, timeout):
-        '''Creates a new lock for the given resource.'''
+        """Creates a new lock for the given resource."""
         self.lock.writer_enters()
         try:
             pass
@@ -537,7 +542,7 @@ class DavLock(object):
             self.lock.writer_leaves()
 
     def release(self, lock):
-        '''Releases the lock referenced by the given lock id.'''
+        """Releases the lock referenced by the given lock id."""
         self.lock.writer_enters()
         try:
             pass
@@ -545,7 +550,7 @@ class DavLock(object):
             self.lock.writer_leaves()
 
     def del_locks(self, res):
-        '''Releases all locks for the given resource.'''
+        """Releases all locks for the given resource."""
         self.lock.writer_enters()
         try:
             pass
@@ -562,19 +567,19 @@ class DavServer(object):
         self.locks = lock_class(self)
 
     def get_root(self):
-        '''Return the root of the file system we wish to export. By default the root
+        """Return the root of the file system we wish to export. By default the root
         is read from the DAV_ROOT setting in django's settings.py. You can override
-        this method to export a different directory (maybe even different per user).'''
+        this method to export a different directory (maybe even different per user)."""
         return getattr(settings, 'DAV_ROOT', None)
 
     def get_access(self, path):
-        '''Return permission as DavAcl object. A DavACL should have the following attributes:
+        """Return permission as DavAcl object. A DavACL should have the following attributes:
         read, write, delete, create, relocate, list. By default we implement a read-only
-        system.'''
+        system."""
         return self.acl_class(list=True, read=True, all=False)
 
     def get_resource(self, path):
-        '''Return a DavResource object to represent the given path.'''
+        """Return a DavResource object to represent the given path."""
         return self.resource_class(self, path)
 
     def get_depth(self, default='infinity'):
@@ -647,7 +652,7 @@ class DavServer(object):
         if not head and res.isdir():
             if not acl.list:
                 return HttpResponseForbidden()
-            return render_to_response('webdav/index.html', { 'res': res })
+            return render_to_response('djangodav/index.html', {'res': res})
         else:
             if not acl.read:
                 return HttpResponseForbidden()
@@ -847,6 +852,6 @@ class DavServer(object):
         res = self.get_resource(self.request.path)
         if not res.exists():
             return HttpResponseNotFound()
-        depth = self.get_depth(default=0)
+        depth = self.get_depth(default="0")
         if depth != 0:
             return HttpResponseBadRequest('Invalid depth header value %s' % depth)
