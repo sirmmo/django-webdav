@@ -19,9 +19,7 @@
 import os, datetime, mimetypes, time, shutil, urllib, urlparse, httplib, re, calendar, hashlib
 from xml.etree import ElementTree
 from django.conf import settings
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, \
-HttpResponseNotAllowed, HttpResponseBadRequest, HttpResponseNotModified
-from django.http import Http404 as HttpNotFound
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound
 from django.utils import synch
 from django.utils.http import http_date, parse_etags
 from django.utils.encoding import smart_unicode
@@ -144,7 +142,11 @@ class HttpNotAllowed(HttpError):
     status_code = httplib.METHOD_NOT_ALLOWED
 
 
-class HttpResponseNotAllowed(HttpResponse):
+class HttpResponseBadRequest(HttpError):
+    status_code = httplib.BAD_REQUEST
+
+
+class HttpResponseNotAllowed(HttpError):
     status_code = httplib.METHOD_NOT_ALLOWED
 
 
