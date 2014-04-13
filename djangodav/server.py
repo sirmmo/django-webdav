@@ -29,13 +29,13 @@ from django.utils.http import http_date, parse_etags
 from django.shortcuts import render_to_response
 
 from djangodav.acls import DavAcl
-from djangodav.responses import ResponseException, HttpResponsePreconditionFailed, HttpResponseCreated, HttpResponseNoContent, \
+from djangodav.response import ResponseException, HttpResponsePreconditionFailed, HttpResponseCreated, HttpResponseNoContent, \
     HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, HttpResponseNotImplemented, \
     HttpResponseMultiStatus
-from djangodav.locks import DavLock
-from djangodav.properties import DavProperty
-from djangodav.requests import DavRequest
-from djangodav.resources import DavResource
+from djangodav.lock import DavLock
+from djangodav.property import DavProperty
+from djangodav.request import DavRequest
+from djangodav.resource import DavResource
 from djangodav.utils import parse_time, url_join
 
 
