@@ -457,7 +457,7 @@ class DavProperty(object):
         try:
             ns, bare_name = ns_split(name)
             if ns == 'DAV':
-                pass # TODO: handle set-able "live" properties?
+                pass  # TODO: handle set-able "live" properties?
             else:
                 self.set_dead_value(res, name, value)
         finally:
@@ -472,7 +472,7 @@ class DavProperty(object):
             for name in names:
                 ns, bare_name = ns_split(name)
                 if ns == 'DAV':
-                    pass # TODO: handle delete-able "live" properties?
+                    pass  # TODO: handle delete-able "live" properties?
                 else:
                     self.del_dead_prop(res, name)
         finally:
@@ -559,7 +559,8 @@ class DavLock(object):
 
 
 class DavServer(object):
-    def __init__(self, request, path, property_class=DavProperty, resource_class=DavResource, lock_class=DavLock, acl_class=DavAcl):
+    def __init__(self, request, path, property_class=DavProperty, resource_class=DavResource, lock_class=DavLock,
+                 acl_class=DavAcl):
         self.request = DavRequest(self, request, path)
         self.resource_class = resource_class
         self.acl_class = acl_class
@@ -803,7 +804,6 @@ class DavServer(object):
         if self.request.path in ('/', '*'):
             return response
         res = self.get_resource(self.request.path)
-        acl = self.get_access(res.get_abs_path())
         if not res.exists():
             res = res.get_parent()
             if not res.isdir():
