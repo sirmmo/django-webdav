@@ -305,6 +305,10 @@ class DavResource(object):
         for child in os.listdir(self.get_abs_path()):
             yield self.__class__(self.server, os.path.join(self.get_path(), child))
 
+    def write(self, content):
+        with self.open('w') as f:
+            shutil.copyfileobj(content, f)
+
     def open(self, mode):
         """Open the resource, mode is the same as the Python file() object."""
         return file(self.get_abs_path(), mode)
@@ -702,8 +706,7 @@ class DavServer(object):
         if not acl.write:
             return HttpResponseForbidden()
         created = not res.exists()
-        with res.open('w') as f:
-            shutil.copyfileobj(self.request, f)
+        res.write(self.request)
         if created:
             return HttpResponseCreated()
         else:
