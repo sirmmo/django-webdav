@@ -18,3 +18,12 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
+import tempfile
+
+from django.conf import settings
+
+from djangodav.fs.server import FSDavServer
+
+
+class TmpDavServer(FSDavServer):
+    root = getattr(settings, 'TMP_DAV_ROOT', tempfile.tempdir)

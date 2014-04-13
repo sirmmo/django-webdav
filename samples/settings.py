@@ -115,8 +115,9 @@ INSTALLED_APPS = (
     # 'django.contrib.admindocs',
 )
 
-# Define the directory to be exported. I am exporting my home directory... Weee!
-DAV_ROOT = '/home/btimby'
+# Define the directory to be exported. I am exporting my tmp directory... Weee!
+import tempfile
+TMP_DAV_ROOT = tempfile.tempdir
 
 # Set DAV_USE_SENDFILE to offload file sends. Multiple methods are supported.
 
@@ -125,12 +126,14 @@ DAV_ROOT = '/home/btimby'
 #   the path should be escaped (for non-ascii values). Newer versions of
 #   mod_xsendfile support this, the ability is toggled using the XSendFileUnescape
 #   setting in httpd.conf/apache2.conf but enabled by default.
-# DAV_USE_SENDFILE = 'X-SendFile escape'
+# DAV_USE_SENDFILE = Yes
+# DAV_USE_ESCAPE = Yes
 
 # *~*~*~*~ For Nginx *~*~*~*~
 #   You must provide your base_url (the second param). See Nginx docs for
 #   info - http://wiki.nginx.org/XSendfile
-# DAV_USE_SENDFILE = 'X-Accel-Redirect http://localhost/private'
+# DAV_USE_SENDFILE = Yes
+# DAV_USE_SENDFILE_TO = 'http://localhost/private'
 
 # *~*~*~*~ For Django development server *~*~*~*~
 # * Just pass an iterator to Django so it can send the file.
