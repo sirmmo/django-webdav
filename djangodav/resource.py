@@ -24,93 +24,14 @@ import os
 import datetime
 import shutil
 import urllib
+
 from django.conf import settings
 from django.http import HttpResponse
 from django.utils.http import http_date
+
+from djangodav.base.resource import BaseDavResource
 from djangodav.response import ResponseException
-
 from djangodav.utils import safe_join, url_join
-
-
-class BaseDavResource(object):
-    def __init__(self, server, path):
-        self.server = server
-        self.path = path
-        # Trailing / messes with dirname and basename.
-        while path.endswith('/'):
-            path = path[:-1]
-
-    def get_url(self):
-        return url_join(self.server.request.get_base_url(), self.path)
-
-    def get_parent(self):
-        return self.__class__(self.server, self.get_dirname())
-
-    def get_descendants(self, depth=1, include_self=True):
-        """Return an iterator of all descendants of this resource."""
-        if include_self:
-            yield self
-        # If depth is less than 0, then it started out as -1.
-        # We need to keep recursing until we hit 0, or forever
-        # in case of infinity.
-        if depth != 0:
-            for child in self.get_children():
-                for desc in child.get_descendants(depth=depth-1, include_self=True):
-                    yield desc
-
-    def copy(self,  destination, depth=0):
-        raise NotImplementedError()
-
-    def move(self,  destination):
-        raise NotImplementedError()
-
-    def write(self, content):
-        raise NotImplementedError()
-
-    def read(self):
-        raise NotImplementedError()
-
-    def isdir(self):
-        raise NotImplementedError()
-
-    def isfile(self):
-        raise NotImplementedError()
-
-    def exists(self):
-        raise NotImplementedError()
-
-    def get_name(self):
-        raise NotImplementedError()
-
-    def get_dirname(self):
-        raise NotImplementedError()
-
-    def get_size(self):
-        raise NotImplementedError()
-
-    def get_ctime_stamp(self):
-        raise NotImplementedError()
-
-    def get_ctime(self):
-        raise NotImplementedError()
-
-    def get_mtime_stamp(self):
-        raise NotImplementedError()
-
-    def get_mtime(self):
-        raise NotImplementedError()
-
-    def get_children(self):
-        raise NotImplementedError()
-
-    def delete(self):
-        raise NotImplementedError()
-
-    def mkdir(self):
-        raise NotImplementedError()
-
-    def get_etag(self):
-        raise NotImplementedError()
 
 
 class FSDavResource(BaseDavResource):
