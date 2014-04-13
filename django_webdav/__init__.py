@@ -107,7 +107,7 @@ def parse_time(time):
 
 class HttpError(Exception):
     '''A base HTTP error class. This allows utility functions to raise an HTTP error so that
-    when used inside a handler, the handler can simply call the utility and the correct 
+    when used inside a handler, the handler can simply call the utility and the correct
     HttpResponse will be issued to the client.'''
     status_code = 500
 
@@ -310,7 +310,7 @@ class DavResource(object):
     def copy(self, destination, depth=0):
         '''Called to copy a resource to a new location. Overwrite is assumed, the DAV server
         will refuse to copy to an existing resource otherwise. This method needs to gracefully
-        handle a pre-existing destination of any type. It also needs to respect the depth 
+        handle a pre-existing destination of any type. It also needs to respect the depth
         parameter. depth == -1 is infinity.'''
         if self.isdir():
             if destination.isfile():
@@ -618,7 +618,7 @@ class DavServer(object):
             if not cond_if.startswith('<'):
                 cond_if = '<*>' + cond_if
             #for (tmpurl, url, tmpcontent, content) in PATTERN_IF_DELIMITER.findall(cond_if):
-                
+
 
     def get_response(self):
         handler = getattr(self, 'do' + self.request.method, None)
@@ -840,4 +840,3 @@ class DavServer(object):
         depth = self.get_depth(default=0)
         if depth != 0:
             return HttpResponseBadRequest('Invalid depth header value %s' % depth)
-        
