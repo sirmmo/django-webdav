@@ -42,20 +42,17 @@ from djangodav.utils import parse_time, url_join
 PATTERN_IF_DELIMITER = re.compile(r'(<([^>]+)>)|(\(([^\)]+)\))')
 
 
-class DavServer(object):
-    def __init__(self, request, path, property_class=DavProperty, resource_class=FSDavResource, lock_class=DavLock,
-                 acl_class=DavAcl):
-        self.request = DavRequest(self, request, path)
-        self.resource_class = resource_class
-        self.acl_class = acl_class
-        self.props = property_class(self)
-        self.locks = lock_class(self)
+class BaseDavServer(object):
+    resource_class = None
+    lock_class = DavLock
+    request_class = DavRequest
+    acl_class = DavAcl
+    property_class = DavProperty
 
-    def get_root(self):
-        """Return the root of the file system we wish to export. By default the root
-        is read from the DAV_ROOT setting in django's settings.py. You can override
-        this method to export a different directory (maybe even different per user)."""
-        return getattr(settings, 'DAV_ROOT', None)
+    def __init__(self, request, path):
+        self.request = self.request_class(self, request, path)
+        self.props = self.property_class(self)
+        self.locks = self.lock_class(self)
 
     def get_access(self, path):
         """Return permission as DavAcl object. A DavACL should have the following attributes:
@@ -131,7 +128,7 @@ class DavServer(object):
 
     def doGET(self, head=False):
         res = self.get_resource(self.request.path)
-        acl = self.get_access(res.get_abs_path())
+        acl = self.get_access(res.path)
         if not res.exists():
             return HttpResponseNotFound()
         if not head and res.isdir():
@@ -146,22 +143,8 @@ class DavServer(object):
             elif head:
                 response = HttpResponseNotFound()
             else:
-                use_sendfile = getattr(settings, 'DAV_USE_SENDFILE', '').split()
-                if len(use_sendfile) > 0 and use_sendfile[0].lower() == 'x-sendfile':
-                    full_path = res.get_abs_path().encode('utf-8')
-                    if len(use_sendfile) == 2 and use_sendfile[1] == 'escape':
-                        full_path = urllib.quote(full_path)
-                    response = HttpResponse()
-                    response['X-SendFile'] = full_path
-                elif len(use_sendfile) == 2 and use_sendfile[0].lower() == 'x-accel-redir':
-                    full_path = res.get_abs_path().encode('utf-8')
-                    full_path = url_join(use_sendfile[1], full_path)
-                    response = HttpResponse()
-                    response['X-Accel-Redirect'] = full_path
-                    response['X-Accel-Charset'] = 'utf-8'
-                else:
-                    # Do things the slow way:
-                    response = HttpResponse(res.read())
+                # Do things the slow way:
+                response = HttpResponse(res.read())
             if res.exists():
                 response['Content-Type'] = mimetypes.guess_type(res.get_name())
                 response['Content-Length'] = res.get_size()
@@ -182,7 +165,7 @@ class DavServer(object):
             return HttpResponseNotAllowed()
         if not res.get_parent().exists():
             return HttpResponseNotFound()
-        acl = self.get_access(res.get_abs_path())
+        acl = self.get_access(res.path)
         if not acl.write:
             return HttpResponseForbidden()
         created = not res.exists()
@@ -196,7 +179,7 @@ class DavServer(object):
         res = self.get_resource(self.request.path)
         if not res.exists():
             return HttpResponseNotFound()
-        acl = self.get_access(res.get_abs_path())
+        acl = self.get_access(res.path)
         if not acl.delete:
             return HttpResponseForbidden()
         self.locks.del_locks(res)
@@ -215,7 +198,7 @@ class DavServer(object):
         length = self.request.META.get('CONTENT_LENGTH', 0)
         if length and int(length) != 0:
             return HttpResponseMediatypeNotSupported()
-        acl = self.get_access(res.get_abs_path())
+        acl = self.get_access(res.path)
         if not acl.create:
             return HttpResponseForbidden()
         res.mkdir()
@@ -225,7 +208,7 @@ class DavServer(object):
         res = self.get_resource(self.request.path)
         if not res.exists():
             return HttpResponseNotFound()
-        acl = self.get_access(res.get_abs_path())
+        acl = self.get_access(res.path)
         if not acl.relocate:
             return HttpResponseForbidden()
         dst = urllib.unquote(self.request.META.get('HTTP_DESTINATION', ''))
@@ -303,7 +286,7 @@ class DavServer(object):
         res = self.get_resource(self.request.path)
         if not res.exists():
             return HttpResponseNotFound()
-        acl = self.get_access(res.get_abs_path())
+        acl = self.get_access(res.path)
         if not acl.listing:
             return HttpResponseForbidden()
         depth = self.get_depth()
@@ -338,3 +321,8 @@ class DavServer(object):
         depth = self.get_depth(default="0")
         if depth != 0:
             return HttpResponseBadRequest('Invalid depth header value %s' % depth)
+
+
+class FSDavServer(BaseDavServer):
+    resource_class = FSDavResource
+    root = None

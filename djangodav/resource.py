@@ -19,9 +19,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 import hashlib
+import mimetypes
 import os
 import datetime
 import shutil
+import urllib
+from django.conf import settings
+from django.http import HttpResponse
+from django.utils.http import http_date
+from djangodav.response import ResponseException
 
 from djangodav.utils import safe_join, url_join
 
@@ -29,16 +35,10 @@ from djangodav.utils import safe_join, url_join
 class BaseDavResource(object):
     def __init__(self, server, path):
         self.server = server
-        self.root = server.get_root()
+        self.path = path
         # Trailing / messes with dirname and basename.
         while path.endswith('/'):
             path = path[:-1]
-
-    def get_abs_path(self):
-        """Return the absolute path of the resource. Used internally to interface with
-        an actual file system. If you override all other methods, this one will not
-        be used."""
-        return safe_join(self.root, self.path)
 
     def get_url(self):
         return url_join(self.server.request.get_base_url(), self.path)
@@ -118,6 +118,12 @@ class FSDavResource(BaseDavResource):
     a virtual file system (like say in MySQL). This default implementation simply uses
     python's os library to do most of the work."""
 
+    def get_abs_path(self):
+        """Return the absolute path of the resource. Used internally to interface with
+        an actual file system. If you override all other methods, this one will not
+        be used."""
+        return safe_join(self.server.root, self.path)
+
     def isdir(self):
         """Return True if this resource is a directory (collection in WebDAV parlance)."""
         return os.path.isdir(self.get_abs_path())
@@ -170,8 +176,32 @@ class FSDavResource(BaseDavResource):
             shutil.copyfileobj(content, f)
 
     def read(self):
-        """Open the resource, mode is the same as the Python file() object."""
-        return file(self.get_abs_path(), 'r').read()
+        use_sendfile = getattr(settings, 'DAV_USE_SENDFILE', '')
+        use_redirect = getattr(settings, 'DAV_USE_REDIRECT', '')
+
+        if not use_sendfile and use_redirect:
+            return file(self.get_abs_path(), 'r').read()
+
+        response = HttpResponse()
+
+        if use_sendfile == 'x-sendfile':
+            full_path = self.get_abs_path().encode('utf-8')
+            if getattr(settings, 'DAV_USE_SENDFILE_QUOTE', True):
+                full_path = urllib.quote(full_path)
+            response['X-SendFile'] = full_path
+
+        elif use_redirect == 'x-accel-redir':
+            full_path = self.get_abs_path().encode('utf-8')
+            full_path = url_join(getattr(settings, 'DAV_USE_REDIRECT_TO', '/'), full_path)
+            response['X-Accel-Redirect'] = full_path
+            response['X-Accel-Charset'] = 'utf-8'
+
+        response['Content-Type'] = mimetypes.guess_type(self.get_name())
+        response['Content-Length'] = self.get_size()
+        response['Last-Modified'] = http_date(self.get_mtime_stamp())
+        response['ETag'] = self.get_etag()
+
+        raise ResponseException(response)
 
     def delete(self):
         """Delete the resource, recursive is implied."""
