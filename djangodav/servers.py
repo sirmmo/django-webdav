@@ -24,220 +24,22 @@ from xml.etree import ElementTree
 from django.conf import settings
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseNotAllowed, \
     HttpResponseBadRequest
-from django.utils import synch
+
 from django.utils.http import http_date, parse_etags
-from django.utils.encoding import smart_unicode
 from django.shortcuts import render_to_response
+
+from djangodav.acls import DavAcl
 from djangodav.http import HttpPreconditionFailed, HttpNotModified, HttpNotAllowed, HttpError, HttpResponseCreated, \
     HttpResponseNoContent, HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, \
     HttpResponsePreconditionFailed, HttpResponseMultiStatus, HttpResponseNotImplemented
-from djangodav.utils import ns_split, rfc3339_date, parse_time
+from djangodav.locks import DavLock
+from djangodav.properties import DavProperty
+from djangodav.requests import DavRequest
+from djangodav.resources import DavResource
+from djangodav.utils import parse_time, url_join
 
 
 PATTERN_IF_DELIMITER = re.compile(r'(<([^>]+)>)|(\(([^\)]+)\))')
-
-
-class DavAcl(object):
-    """Represents all the permissions that a user might have on a resource. This
-    makes it easy to implement virtual permissions."""
-    def __init__(self, read=True, write=True, delete=True, create=True, relocate=True, _list=True, _all=None):
-        if not all is None:
-            self.read = self.write = self.delete = \
-                self.create = self.relocate = self.list = _all
-        self.read = read
-        self.write = write
-        self.delete = delete
-        self.create = create
-        self.relocate = relocate
-        self.list = _list
-
-
-class DavRequest(object):
-    """Wraps a Django request object, and extends it with some WebDAV
-    specific methods."""
-    def __init__(self, server, request, path):
-        self.server = server
-        self.request = request
-        self.path = path
-
-    def __getattr__(self, name):
-        return getattr(self.request, name)
-
-    def get_base(self):
-        """Assuming the view is configured via urls.py to pass the path portion using
-        a regular expression, we can subtract the provided path from the full request
-        path to determine our base. This base is what we can make all absolute URLs
-        from."""
-        return self.META['PATH_INFO'][:-len(self.path)]
-
-    def get_base_url(self):
-        """Build a base URL for our request. Uses the base path provided by get_base()
-        and the scheme/host etc. in the request to build a URL that can be used to
-        build absolute URLs for WebDAV resources."""
-        return self.build_absolute_uri(self.get_base())
-
-
-class DavProperty(object):
-    LIVE_PROPERTIES = [
-        '{DAV:}getetag', '{DAV:}getcontentlength', '{DAV:}creationdate',
-        '{DAV:}getlastmodified', '{DAV:}resourcetype', '{DAV:}displayname'
-    ]
-
-    def __init__(self, server):
-        self.server = server
-        self.lock = synch.RWLock()
-
-    def get_dead_names(self, res):
-        return []
-
-    def get_dead_value(self, res, name):
-        """Implements "dead" property retrival. Thread synchronization is handled outside this method."""
-        return
-
-    def set_dead_value(self, res, name, value):
-        """Implements "dead" property storage. Thread synchronization is handled outside this method."""
-        return
-
-    def del_dead_prop(self, res, name):
-        """Implements "dead" property removal. Thread synchronizatioin is handled outside this method."""
-        return
-
-    def get_prop_names(self, res, *names):
-        return self.LIVE_PROPERTIES + self.get_dead_names(res)
-
-    def get_prop_value(self, res, name):
-        self.lock.reader_enters()
-        try:
-            ns, bare_name = ns_split(name)
-            if ns != 'DAV':
-                return self.get_dead_value(res, name)
-            else:
-                value = None
-                if bare_name == 'getetag':
-                    value = res.get_etag()
-                elif bare_name == 'getcontentlength':
-                    value = str(res.get_size())
-                elif bare_name == 'creationdate':
-                    value = rfc3339_date(res.get_ctime_stamp())     # RFC3339:
-                elif bare_name == 'getlastmodified':
-                    value = http_date(res.get_mtime_stamp())        # RFC1123:
-                elif bare_name == 'resourcetype':
-                    if res.isdir():
-                        value = []
-                    else:
-                        value = ''
-                elif bare_name == 'displayname':
-                    value = res.get_name()
-                elif bare_name == 'href':
-                    value = res.get_url()
-            return value
-        finally:
-            self.lock.reader_leaves()
-
-    def set_prop_value(self, res, name, value):
-        self.lock.writer_enters()
-        try:
-            ns, bare_name = ns_split(name)
-            if ns == 'DAV':
-                pass  # TODO: handle set-able "live" properties?
-            else:
-                self.set_dead_value(res, name, value)
-        finally:
-            self.lock.writer_leaves()
-
-    def del_props(self, res, *names):
-        self.lock.writer_enters()
-        try:
-            avail_names = self.get_prop_names(res)
-            if not names:
-                names = avail_names
-            for name in names:
-                ns, bare_name = ns_split(name)
-                if ns == 'DAV':
-                    pass  # TODO: handle delete-able "live" properties?
-                else:
-                    self.del_dead_prop(res, name)
-        finally:
-            self.lock.writer_leaves()
-
-    def copy_props(self, src, dst, *names, **kwargs):
-        move = kwargs.get('move', False)
-        self.lock.writer_enters()
-        try:
-            names = self.get_prop_names(src)
-            for name in names:
-                ns, bare_name = ns_split(name)
-                if ns == 'DAV':
-                    continue
-                self.set_dead_value(dst, name, self.get_prop_value(src, name))
-                if move:
-                    self.del_dead_prop(self, name)
-        finally:
-            self.lock.writer_leaves()
-
-    def get_propstat(self, res, el, *names):
-        """Returns the XML representation of a resource's properties. Thread synchronization is handled
-        in the get_prop_value() method individually for each property."""
-        el404, el200 = None, None
-        avail_names = self.get_prop_names(res)
-        if not names:
-            names = avail_names
-        for name in names:
-            if name in avail_names:
-                value = self.get_prop_value(res, name)
-                if el200 is None:
-                    el200 = ElementTree.SubElement(el, '{DAV:}propstat')
-                    ElementTree.SubElement(el200, '{DAV:}status').text = 'HTTP/1.1 200 OK'
-                prop = ElementTree.SubElement(el200, '{DAV:}prop')
-                prop = ElementTree.SubElement(prop, name)
-                if isinstance(value, list):
-                    prop.append(ElementTree.Element("{DAV:}collection"))
-                elif value:
-                    prop.text = smart_unicode(value)
-            else:
-                if el404 is None:
-                    el404 = ElementTree.SubElement(el, '{DAV:}propstat')
-                    ElementTree.SubElement(el404, '{DAV:}status').text = 'HTTP/1.1 404 Not Found'
-                prop = ElementTree.SubElement(el404, '{DAV:}prop')
-                prop = ElementTree.SubElement(prop, name)
-
-
-class DavLock(object):
-    def __init__(self, server):
-        self.server = server
-        self.lock = synch.RWLock()
-
-    def get(self, res):
-        """Gets all active locks for the requested resource. Returns a list of locks."""
-        self.lock.reader_enters()
-        try:
-            pass
-        finally:
-            self.lock.reader_leaves()
-
-    def acquire(self, res, type, scope, depth, owner, timeout):
-        """Creates a new lock for the given resource."""
-        self.lock.writer_enters()
-        try:
-            pass
-        finally:
-            self.lock.writer_leaves()
-
-    def release(self, lock):
-        """Releases the lock referenced by the given lock id."""
-        self.lock.writer_enters()
-        try:
-            pass
-        finally:
-            self.lock.writer_leaves()
-
-    def del_locks(self, res):
-        """Releases all locks for the given resource."""
-        self.lock.writer_enters()
-        try:
-            pass
-        finally:
-            self.lock.writer_leaves()
 
 
 class DavServer(object):
