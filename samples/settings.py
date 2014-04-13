@@ -1,20 +1,23 @@
+# Portions (c) 2014, Alexander Klimenko <alex@erix.ru>
+# All rights reserved.
+#
 # Copyright (c) 2011, SmartFile <btimby@smartfile.com>
 # All rights reserved.
 #
-# This file is part of django-webdav.
+# This file is part of DjangoDav.
 #
-# Foobar is free software: you can redistribute it and/or modify
+# DjangoDav is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
 # by the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Foobar is distributed in the hope that it will be useful,
+# DjangoDav is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with django-webdav.  If not, see <http://www.gnu.org/licenses/>.
+# along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -105,7 +108,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
-    'django_webdav',
+    'djangodav',
     # Uncomment the next line to enable the admin:
     # 'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
