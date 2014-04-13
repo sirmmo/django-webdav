@@ -30,7 +30,7 @@ from django.http import HttpResponse
 from django.utils.http import http_date
 
 from djangodav.base.resource import BaseDavResource
-from djangodav.response import ResponseException
+from djangodav.base.response import ResponseException
 from djangodav.utils import safe_join, url_join
 
 
