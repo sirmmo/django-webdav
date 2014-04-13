@@ -183,8 +183,8 @@ class HttpResponseMediatypeNotSupported(HttpResponse):
     status_code = httplib.UNSUPPORTED_MEDIA_TYPE
 
 
-class HttpNotImplemented(HttpError):
-    status_code = httplib.NOT_IMPLEMENTED
+class HttpResponseNotImplemented(HttpResponse):
+    status_code = httplib.MULTI_STATUS
 
 
 class HttpBadGateway(HttpError):
