@@ -631,6 +631,8 @@ class DavServer(object):
     def doGET(self, head=False):
         res = self.get_resource(self.request.path)
         acl = self.get_access(res.get_abs_path())
+        if not res.exists():
+            return HttpResponseNotFound()
         if not head and res.isdir():
             if not acl.list:
                 return HttpResponseForbidden()
@@ -658,7 +660,7 @@ class DavServer(object):
                     response['X-Accel-Charset'] = 'utf-8'
                 else:
                     # Do things the slow way:
-                    response =  HttpResponse(res.open('r'))
+                    response = HttpResponse(res.open('r'))
             if res.exists():
                 response['Content-Type'] = mimetypes.guess_type(res.get_name())
                 response['Content-Length'] = res.get_size()
