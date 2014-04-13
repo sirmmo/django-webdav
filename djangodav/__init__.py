@@ -765,7 +765,7 @@ class DavServer(object):
             errors = res.move(dst)
         else:
             errors = res.copy(dst, depth=depth)
-        self.props.copy(res, dst, move=move)
+        self.props.copy_props(res, dst, move=move)
         if move:
             self.locks.del_locks(res)
         if errors:
