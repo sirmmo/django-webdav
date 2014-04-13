@@ -10,7 +10,7 @@ from djangodav.acls import DavAcl
 from djangodav.response import ResponseException, HttpResponsePreconditionFailed, HttpResponseCreated, HttpResponseNoContent, \
     HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, HttpResponseNotImplemented, \
     HttpResponseMultiStatus
-from djangodav.lock import DavLock
+from djangodav.base.lock import DavLock
 from djangodav.property import DavProperty
 from djangodav.request import DavRequest
 from djangodav.utils import parse_time
