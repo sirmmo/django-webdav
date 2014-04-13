@@ -22,16 +22,16 @@
 import mimetypes, urllib, urlparse, re
 from xml.etree import ElementTree
 from django.conf import settings
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseNotAllowed, \
-    HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseNotAllowed, HttpResponseBadRequest, \
+    HttpResponseNotModified
 
 from django.utils.http import http_date, parse_etags
 from django.shortcuts import render_to_response
 
 from djangodav.acls import DavAcl
-from djangodav.responses import HttpPreconditionFailed, HttpNotModified, HttpNotAllowed, HttpError, HttpResponseCreated, \
-    HttpResponseNoContent, HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, \
-    HttpResponsePreconditionFailed, HttpResponseMultiStatus, HttpResponseNotImplemented
+from djangodav.responses import ResponseException, HttpResponsePreconditionFailed, HttpResponseCreated, HttpResponseNoContent, \
+    HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, HttpResponseNotImplemented, \
+    HttpResponseMultiStatus
 from djangodav.locks import DavLock
 from djangodav.properties import DavProperty
 from djangodav.requests import DavRequest
@@ -70,7 +70,7 @@ class DavServer(object):
     def get_depth(self, default='infinity'):
         depth = str(self.request.META.get('HTTP_DEPTH', default)).lower()
         if not depth in ('0', '1', 'infinity'):
-            raise HttpResponseBadRequest('Invalid depth header value %s' % depth)
+            raise ResponseException(HttpResponseBadRequest('Invalid depth header value %s' % depth))
         if depth == 'infinity':
             depth = -1
         else:
@@ -86,7 +86,7 @@ class DavServer(object):
         if cond_if_match:
             etags = parse_etags(cond_if_match)
             if '*' in etags or etag in etags:
-                raise HttpPreconditionFailed()
+                raise ResponseException(HttpResponsePreconditionFailed())
         cond_if_modified_since = self.request.META.get('HTTP_IF_MODIFIED_SINCE', False)
         if cond_if_modified_since:
             # Parse and evaluate, but don't raise anything just yet...
@@ -101,18 +101,18 @@ class DavServer(object):
             etags = parse_etags(cond_if_none_match)
             if '*' in etags or etag in etags:
                 if self.request.method in ('GET', 'HEAD'):
-                    raise HttpNotModified()
-                raise HttpPreconditionFailed()
+                    raise ResponseException(HttpResponseNotModified())
+                raise ResponseException(HttpResponsePreconditionFailed())
             # Ignore If-Modified-Since header...
             cond_if_modified_since = False
         cond_if_unmodified_since = self.request.META.get('HTTP_IF_UNMODIFIED_SINCE', None)
         if cond_if_unmodified_since:
             cond_if_unmodified_since = parse_time(cond_if_unmodified_since)
             if cond_if_unmodified_since and cond_if_unmodified_since <= mtime:
-                raise HttpPreconditionFailed()
+                raise ResponseException(HttpResponsePreconditionFailed())
         if cond_if_modified_since:
             # This previously evaluated True and is not being ignored...
-            raise HttpNotModified()
+            raise ResponseException(HttpResponseNotModified())
         # TODO: complete If header handling...
         cond_if = self.request.META.get('HTTP_IF', None)
         if cond_if:
@@ -124,10 +124,10 @@ class DavServer(object):
         handler = getattr(self, 'do' + self.request.method, None)
         try:
             if not callable(handler):
-                raise HttpNotAllowed()
+                return HttpResponseNotAllowed()
             return handler()
-        except HttpError, e:
-            return e.get_response()
+        except ResponseException, e:
+            return e.response
 
     def doGET(self, head=False):
         res = self.get_resource(self.request.path)

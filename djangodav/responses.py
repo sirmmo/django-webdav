@@ -29,59 +29,18 @@ from django.http import HttpResponse
 # this case, we provide HttpError sub-classes for raising.
 
 
-class HttpError(Exception):
+class ResponseException(Exception):
     """A base HTTP error class. This allows utility functions to raise an HTTP error so that
     when used inside a handler, the handler can simply call the utility and the correct
     HttpResponse will be issued to the client."""
-    status_code = 500
 
-    def get_response(self):
-        """Creates an HTTPResponse for the given status code."""
-        return HttpResponse(self.message, status=self.status_code)
-
-
-class HttpCreated(HttpError):
-    status_code = httplib.CREATED
-
-
-class HttpNoContent(HttpError):
-    status_code = httplib.NO_CONTENT
-
-
-class HttpNotModified(HttpError):
-    status_code = httplib.NOT_MODIFIED
-
-
-class HttpMultiStatus(HttpError):
-    status_code = httplib.MULTI_STATUS
-
-
-class HttpNotAllowed(HttpError):
-    status_code = httplib.METHOD_NOT_ALLOWED
-
-
-class HttpResponseBadRequest(HttpError):
-    status_code = httplib.BAD_REQUEST
-
-
-class HttpResponseNotAllowed(HttpError):
-    status_code = httplib.METHOD_NOT_ALLOWED
-
-
-class HttpConflict(HttpError):
-    status_code = httplib.CONFLICT
-
-
-class HttpPreconditionFailed(HttpError):
-    status_code = httplib.PRECONDITION_FAILED
+    def __init__(self, response, *args, **kwargs):
+        super(ResponseException, self).__init__('Response excepted', *args, **kwargs)
+        self.response = response
 
 
 class HttpResponsePreconditionFailed(HttpResponse):
     status_code = httplib.PRECONDITION_FAILED
-
-
-class HttpBadGateway(HttpError):
-    status_code = httplib.BAD_GATEWAY
 
 
 class HttpResponseMediatypeNotSupported(HttpResponse):
@@ -106,10 +65,6 @@ class HttpResponseCreated(HttpResponse):
 
 class HttpResponseNoContent(HttpResponse):
     status_code = httplib.NO_CONTENT
-
-
-class HttpMediatypeNotSupported(HttpError):
-    status_code = httplib.UNSUPPORTED_MEDIA_TYPE
 
 
 class HttpResponseConflict(HttpResponse):
