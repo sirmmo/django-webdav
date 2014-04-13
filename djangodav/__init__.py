@@ -306,12 +306,12 @@ class DavResource(object):
             yield self.__class__(self.server, os.path.join(self.get_path(), child))
 
     def write(self, content):
-        with self.open('w') as f:
+        with file(self.get_abs_path(), 'w') as f:
             shutil.copyfileobj(content, f)
 
-    def open(self, mode):
+    def read(self):
         """Open the resource, mode is the same as the Python file() object."""
-        return file(self.get_abs_path(), mode)
+        return file(self.get_abs_path(), 'r').read()
 
     def delete(self):
         """Delete the resource, recursive is implied."""
@@ -681,7 +681,7 @@ class DavServer(object):
                     response['X-Accel-Charset'] = 'utf-8'
                 else:
                     # Do things the slow way:
-                    response = HttpResponse(res.open('r'))
+                    response = HttpResponse(res.read())
             if res.exists():
                 response['Content-Type'] = mimetypes.guess_type(res.get_name())
                 response['Content-Length'] = res.get_size()
