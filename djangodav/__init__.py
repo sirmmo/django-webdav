@@ -131,6 +131,10 @@ class HttpNoContent(HttpError):
     status_code = httplib.NO_CONTENT
 
 
+class HttpNotModified(HttpError):
+    status_code = httplib.NOT_MODIFIED
+
+
 class HttpResponseNoContent(HttpResponse):
     status_code = httplib.NO_CONTENT
 
