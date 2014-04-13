@@ -12,7 +12,7 @@ from djangodav.response import ResponseException, HttpResponsePreconditionFailed
     HttpResponseMultiStatus
 from djangodav.base.lock import DavLock
 from djangodav.base.property import DavProperty
-from djangodav.request import DavRequest
+from djangodav.base.request import DavRequest
 from djangodav.utils import parse_time
 
 
