@@ -29,7 +29,7 @@ from django.utils.http import http_date, parse_etags
 from django.shortcuts import render_to_response
 
 from djangodav.acls import DavAcl
-from djangodav.http import HttpPreconditionFailed, HttpNotModified, HttpNotAllowed, HttpError, HttpResponseCreated, \
+from djangodav.responses import HttpPreconditionFailed, HttpNotModified, HttpNotAllowed, HttpError, HttpResponseCreated, \
     HttpResponseNoContent, HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, \
     HttpResponsePreconditionFailed, HttpResponseMultiStatus, HttpResponseNotImplemented
 from djangodav.locks import DavLock
