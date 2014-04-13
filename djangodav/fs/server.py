@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from djangodav.base.server import BaseDavServer
-from djangodav.resource import FSDavResource
+from djangodav.fs.resource import FSDavResource
 
 
 class FSDavServer(BaseDavServer):
