@@ -111,6 +111,6 @@ class TestDavBaseServer(TestCase):
         self.request = HttpRequest()
         self.server = self.DavServer(self.request, '/path/to/name/')
 
-    def test_request(self):
+    def test_get_resource(self):
         self.server.get_resource()
         self.DavServer.resource_class.assert_called_with('/path/to/name/')
