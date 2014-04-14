@@ -3,9 +3,11 @@ from xml.etree import ElementTree
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseNotAllowed, HttpResponseBadRequest, \
     HttpResponseNotModified
+from django.utils.decorators import method_decorator
 from django.utils.functional import cached_property
 from django.utils.http import http_date, parse_etags
 from django.shortcuts import render_to_response
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
 from djangodav.base.acl import DavAcl
@@ -95,6 +97,7 @@ class WebDavView(View):
                 cond_if = '<*>' + cond_if
             #for (tmpurl, url, tmpcontent, content) in PATTERN_IF_DELIMITER.findall(cond_if):
 
+    @method_decorator(csrf_exempt)
     def dispatch(self, request, path, *args, **kwargs):
         self.path = path
         self.props = self.property_class(self)
