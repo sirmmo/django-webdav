@@ -52,7 +52,7 @@ class HttpResponseMultiStatus(HttpResponse):
 
 
 class HttpResponseNotImplemented(HttpResponse):
-    status_code = httplib.MULTI_STATUS
+    status_code = httplib.NOT_IMPLEMENTED
 
 
 class HttpResponseBadGateway(HttpResponse):
