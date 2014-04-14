@@ -18,8 +18,3 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
-from samples.fs.server import TmpDavServer
-
-
-def tmp(request, path):
-    return TmpDavServer(request, path).get_response()
