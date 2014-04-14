@@ -28,11 +28,11 @@ class BaseDavResource(object):
         self.server = server
         self.path = path
         # Trailing / messes with dirname and basename.
-        while path.endswith('/'):
-            path = path[:-1]
+        while self.path.endswith('/'):
+            self.path = self.path[:-1]
 
     def get_url(self):
-        return url_join(self.server.request.get_base_url(), self.path)
+        return url_join(self.server.request.get_base_url(), self.path) + ("/" * int(self.isdir()))
 
     def get_parent(self):
         return self.__class__(self.server, self.get_dirname())

@@ -50,4 +50,5 @@ with this such as django-digest etc. to provide a powerful WebDAV server.
     ],
     include_package_data=True,
     zip_safe=False,
+    test_suite='runtests.runtests'
 )
