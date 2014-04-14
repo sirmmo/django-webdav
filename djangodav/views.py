@@ -28,7 +28,7 @@ class WebDavView(View):
     acl_class = DavAcl
     property_class = DavProperty
     template_name = 'djangodav/index.html'
-    http_method_names = ['options', 'put', 'mkcol', 'head', 'get', 'delete', 'propfind', 'proppatch', 'copy', 'move', 'lock', 'unlock']
+    http_method_names = ['options', 'put', 'mkcol', 'head', 'get', 'delete', 'propfind', 'proppatch', 'copy', 'move', ] #'lock', 'unlock'
 
     def get_access(self, path):
         """Return permission as DavAcl object. A DavACL should have the following attributes:
@@ -108,9 +108,12 @@ class WebDavView(View):
         else:
             handler = self.http_method_not_allowed
         try:
-            return handler(request, path, *args, **kwargs)
+            resp = handler(request, path, *args, **kwargs)
         except ResponseException, e:
-            return e.response
+            resp = e.response
+        if not 'Allow' in resp:
+            resp['Allow'] = ", ".join(self._allowed_methods())
+        return resp
 
     def get(self, request, path, head=False, *args, **kwargs):
         acl = self.get_access(self.path)
@@ -149,7 +152,7 @@ class WebDavView(View):
         if not acl.write:
             return HttpResponseForbidden()
         created = not self.resource.exists()
-        self.resource.write(self.request)
+        self.resource.write(self.request.body)
         if created:
             return HttpResponseCreated()
         else:
@@ -247,7 +250,7 @@ class WebDavView(View):
             if not res.isdir():
                 return HttpResponseNotFound()
             return allowed + ['PUT', 'MKCOL']
-        allowed += ['HEAD', 'GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK']
+        allowed += ['HEAD', 'GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', ] # 'LOCK', 'UNLOCK'
         if self.resource.isfile():
             allowed += ['PUT']
         return allowed

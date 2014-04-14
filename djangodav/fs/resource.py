@@ -152,13 +152,17 @@ class BaseFSDavResource(BaseDavResource):
 
 class DummyReadFSDavResource(BaseFSDavResource):
     def read(self):
-        return file(self.get_abs_path(), 'r').read()
+        f = open(self.get_abs_path(), 'r')
+        resp = f.read()
+        f.close()
+        return resp
 
 
 class DummyWriteFSDavResource(BaseFSDavResource):
     def write(self, content):
-        with file(self.get_abs_path(), 'w') as f:
-            shutil.copyfileobj(content, f)
+        f = open(self.get_abs_path(), 'w')
+        f.write(content)
+        f.close()
 
 
 class DummyFSDAVResource(DummyReadFSDavResource, DummyWriteFSDavResource, BaseFSDavResource):

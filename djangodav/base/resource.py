@@ -34,6 +34,8 @@ class BaseDavResource(object):
         return "/".join(self.path) + ("/" * (self.isdir()))
 
     def get_name(self):
+        if not self.path:
+            return None
         return self.path[-1]
 
     def get_dirname(self):
