@@ -24,13 +24,13 @@ from djangodav.fs.resource import BaseFSDavResource
 from mock import patch, Mock
 
 
-class MyDavResource(BaseDavResource):
-    base_url = 'http://testserver/base/'
-
 
 class TestBaseDavResource(TestCase):
+    class DavResource(BaseDavResource):
+        base_url = 'http://testserver/base/'
+
     def setUp(self):
-        self.resource = MyDavResource("/path/to/name")
+        self.resource = self.DavResource("/path/to/name")
 
     def test_path(self):
         self.assertEqual(self.resource.path, ['path', 'to', 'name'])
@@ -58,14 +58,13 @@ class TestBaseDavResource(TestCase):
         self.assertEqual(self.resource.get_name(), 'name')
 
 
-class MyFSDavResource(BaseFSDavResource):
-    base_url = 'http://testserver/base/'
-    root = '/some/folder/'
-
-
 class TestFSDavResource(TestCase):
+    class FSDavResource(BaseFSDavResource):
+        base_url = 'http://testserver/base/'
+        root = '/some/folder/'
+
     def setUp(self):
-        self.resource = MyFSDavResource("/path/to/name")
+        self.resource = self.FSDavResource("/path/to/name")
 
     @patch('djangodav.fs.resource.os.path.isdir')
     def test_isdir(self, isdir):
