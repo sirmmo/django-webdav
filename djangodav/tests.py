@@ -113,4 +113,4 @@ class TestDavBaseServer(TestCase):
 
     def test_get_resource(self):
         self.server.get_resource()
-        self.DavServer.resource_class.assert_called_with('/path/to/name/')
+        self.DavServer.resource_class.assert_called_once_with('/path/to/name/')

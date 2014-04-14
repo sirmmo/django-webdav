@@ -30,7 +30,6 @@ class BaseDavServer(object):
     def __init__(self, request, path):
         self.path = path
         self.request = self.request_class(self, request, path)
-        self.resource = self.resource_class(path)
         self.props = self.property_class(self)
         self.locks = self.lock_class(self)
 
