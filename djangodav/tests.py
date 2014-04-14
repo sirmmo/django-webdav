@@ -96,6 +96,8 @@ class TestFSDavResource(TestCase):
 
     @patch('djangodav.fs.resource.os.listdir')
     def test_get_children(self, listdir):
-        listdir.return_value=[]
-        self.assertEqual(list(self.resource.get_children()), [])
+        listdir.return_value=['child1', 'child2']
+        children = list(self.resource.get_children())
+        self.assertEqual(children[0].path, ['path', 'to', 'name', 'child1'])
+        self.assertEqual(children[1].path, ['path', 'to', 'name', 'child2'])
         listdir.assert_called_with('/some/folder/path/to/name')
