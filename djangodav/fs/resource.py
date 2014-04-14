@@ -57,15 +57,6 @@ class FSDavResource(BaseDavResource):
         """Return True if this resource exists."""
         return os.path.exists(self.get_abs_path())
 
-    def get_name(self):
-        """Return the name of the resource (without path information)."""
-        # No need to use absolute path here
-        return os.path.basename(self.path)
-
-    def get_dirname(self):
-        """Return the resource's parent directory's absolute path."""
-        return os.path.dirname(self.get_abs_path())
-
     def get_size(self):
         """Return the size of the resource in bytes."""
         return os.path.getsize(self.get_abs_path())

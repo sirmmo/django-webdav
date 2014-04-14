@@ -24,18 +24,30 @@ from djangodav.utils import url_join
 
 
 class BaseDavResource(object):
-    def __init__(self, server, path):
-        self.server = server
-        self.path = path
-        # Trailing / messes with dirname and basename.
-        while self.path.endswith('/'):
-            self.path = self.path[:-1]
+    base_url = None
+
+    def __init__(self, request, path):
+        self.path = [-1]
+        self.request = request
+        path = path.strip("/")
+        if path:
+            self.path = path.split("/")
+
+    def get_path(self):
+        return "/".join(self.path) + ("/" * int(self.isdir()))
 
     def get_url(self):
-        return url_join(self.server.request.get_base_url(), self.path) + ("/" * int(self.isdir()))
+        return url_join(self.base_url, self.get_path())
+
+    def get_name(self):
+        return self.path[-1]
+
+    def get_dirname(self):
+        path = self.path[:-1]
+        return "/" + "/".join(path) + "/" if path else ""
 
     def get_parent(self):
-        return self.__class__(self.server, self.get_dirname())
+        return self.__class__(self.request, self.get_dirname())
 
     def get_descendants(self, depth=1, include_self=True):
         """Return an iterator of all descendants of this resource."""
@@ -68,12 +80,6 @@ class BaseDavResource(object):
         raise NotImplementedError()
 
     def exists(self):
-        raise NotImplementedError()
-
-    def get_name(self):
-        raise NotImplementedError()
-
-    def get_dirname(self):
         raise NotImplementedError()
 
     def get_size(self):

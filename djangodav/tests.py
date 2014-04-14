@@ -28,61 +28,71 @@ from mock import patch, Mock
 
 
 class MyFSDavServer(FSDavServer):
+    base_url = 'http://testserver/base/'
     root = '/tmp/'
+
+
+class MyDavResource(BaseDavResource):
+    base_url = 'http://testserver/base/'
 
 
 class TestBaseDavResource(TestCase):
     def setUp(self):
         self.request = HttpRequest()
-        self.request.META['PATH_INFO'] = '/base/path/'
-        self.request.META['SERVER_NAME'] = 'testserver'
-        self.request.META['SERVER_PORT'] = 80
-        self.server = BaseDavServer(self.request, "/path/")
-        self.resource = BaseDavResource(self.server, "/path/")
+        self.resource = MyDavResource(self.request, "/path/to/name")
 
-    def test_get_url_file(self):
-        BaseDavResource.isdir = Mock(return_value=True)
-        BaseDavResource.isfile = Mock(return_value=False)
-        self.assertEqual(self.resource.get_url(), 'http://testserver/base/path/')
+    def test_path(self):
+        self.assertEqual(self.resource.path, ['path', 'to', 'name'])
 
+    @patch('djangodav.base.resource.BaseDavResource.isdir', Mock(return_value=True))
+    def test_get_path_collection(self):
+        self.assertEqual(self.resource.get_path(), 'path/to/name/')
+
+    @patch('djangodav.base.resource.BaseDavResource.isdir', Mock(return_value=False))
+    def test_get_path_object(self):
+        self.assertEqual(self.resource.get_path(), 'path/to/name')
+
+    @patch('djangodav.base.resource.BaseDavResource.isdir', Mock(return_value=True))
     def test_get_url_folder(self):
-        BaseDavResource.isdir = Mock(return_value=False)
-        BaseDavResource.isfile = Mock(return_value=True)
-        self.assertEqual(self.resource.get_url(), 'http://testserver/base/path')
+        self.assertEqual(self.resource.get_url(), 'http://testserver/base/path/to/name/')
+
+    @patch('djangodav.base.resource.BaseDavResource.get_children', Mock(return_value=[]))
+    def test_get_descendants(self):
+        self.assertEqual(list(self.resource.get_descendants(depth=1, include_self=True)), [self.resource])
+
+    def test_get_dirname(self):
+        self.assertEqual(self.resource.get_dirname(), '/path/to/')
+
+    def test_get_name(self):
+        self.assertEqual(self.resource.get_name(), 'name')
 
 
 class TestFSDavResource(TestCase):
     def setUp(self):
         self.request = HttpRequest()
-        self.server = MyFSDavServer(self.request, "/path/")
-        self.resource = FSDavResource(self.server, "/path/")
+        self.server = MyFSDavServer(self.request, "/path/to/name")
+        self.resource = FSDavResource(self.server, "/path/to/name")
 
     @patch('djangodav.fs.resource.os.path.isdir')
     def test_isdir(self, isdir):
         isdir.return_value = True
         self.assertTrue(self.resource.isdir())
-        isdir.assert_called_with('/tmp/path')
+        isdir.assert_called_with('/tmp/path/to/name')
 
     @patch('djangodav.fs.resource.os.path.isfile')
     def test_isfile(self, isfile):
         isfile.return_value = True
         self.assertTrue(self.resource.isfile())
-        isfile.assert_called_with('/tmp/path')
+        isfile.assert_called_with('/tmp/path/to/name')
 
     @patch('djangodav.fs.resource.os.path.exists')
     def test_isfile(self, exists):
         exists.return_value = True
         self.assertTrue(self.resource.exists())
-        exists.assert_called_with('/tmp/path')
-
-    @patch('djangodav.fs.resource.os.path.basename')
-    def test_get_name(self, basename):
-        basename.return_value = 'path'
-        self.assertEquals(self.resource.get_name(), 'path')
-        basename.assert_called_with('/path')
+        exists.assert_called_with('/tmp/path/to/name')
 
     @patch('djangodav.fs.resource.os.path.getsize')
     def test_get_size(self, getsize):
         getsize.return_value = 42
         self.assertEquals(self.resource.get_size(), 42)
-        getsize.assert_called_with('/tmp/path')
+        getsize.assert_called_with('/tmp/path/to/name')
