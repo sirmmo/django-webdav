@@ -9,7 +9,7 @@ from django.shortcuts import render_to_response
 from django.views.generic import View
 
 from djangodav.base.acl import DavAcl
-from djangodav.base.response import ResponseException, HttpResponsePreconditionFailed, HttpResponseCreated, HttpResponseNoContent, \
+from djangodav.response import ResponseException, HttpResponsePreconditionFailed, HttpResponseCreated, HttpResponseNoContent, \
     HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, HttpResponseNotImplemented, \
     HttpResponseMultiStatus
 from djangodav.base.lock import DavLock
