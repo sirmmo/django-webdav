@@ -28,7 +28,9 @@ class BaseDavServer(object):
     template_name = 'djangodav/index.html'
 
     def __init__(self, request, path):
+        self.path = path
         self.request = self.request_class(self, request, path)
+        self.resource = self.resource_class(path)
         self.props = self.property_class(self)
         self.locks = self.lock_class(self)
 
@@ -38,9 +40,9 @@ class BaseDavServer(object):
         system."""
         return self.acl_class(listing=True, read=True, full=False)
 
-    def get_resource(self, path):
+    def get_resource(self):
         """Return a DavResource object to represent the given path."""
-        return self.resource_class(self, path)
+        return self.resource_class(self.path)
 
     def get_depth(self, default='infinity'):
         depth = str(self.request.META.get('HTTP_DEPTH', default)).lower()
@@ -105,7 +107,7 @@ class BaseDavServer(object):
             return e.response
 
     def doGET(self, head=False):
-        res = self.get_resource(self.request.path)
+        res = self.get_resource()
         acl = self.get_access(res.path)
         if not res.exists():
             return HttpResponseNotFound()
@@ -138,7 +140,7 @@ class BaseDavServer(object):
         return HttpResponseNotAllowed('POST method not allowed')
 
     def doPUT(self):
-        res = self.get_resource(self.request.path)
+        res = self.get_resource()
         if res.isdir():
             return HttpResponseNotAllowed()
         if not res.get_parent().exists():
@@ -154,7 +156,7 @@ class BaseDavServer(object):
             return HttpResponseNoContent()
 
     def doDELETE(self):
-        res = self.get_resource(self.request.path)
+        res = self.get_resource()
         if not res.exists():
             return HttpResponseNotFound()
         acl = self.get_access(res.path)
@@ -168,7 +170,7 @@ class BaseDavServer(object):
         return response
 
     def doMKCOL(self):
-        res = self.get_resource(self.request.path)
+        res = self.get_resource()
         if res.exists():
             return HttpResponseNotAllowed()
         if not res.get_parent().exists():
@@ -183,7 +185,7 @@ class BaseDavServer(object):
         return HttpResponseCreated()
 
     def doCOPY(self, move=False):
-        res = self.get_resource(self.request.path)
+        res = self.get_resource()
         if not res.exists():
             return HttpResponseNotFound()
         acl = self.get_access(res.path)
@@ -198,7 +200,7 @@ class BaseDavServer(object):
         if sparts.scheme != dparts.scheme or sparts.netloc != dparts.netloc:
             return HttpResponseBadGateway('Source and destination must have the same scheme and host.')
         # adjust path for our base url:
-        dst = self.get_resource(dparts.path[len(self.request.get_base()):])
+        dst = self.resource_class(dparts.path[len(self.request.get_base()):])
         if not dst.get_parent().exists():
             return HttpResponseConflict()
         overwrite = self.request.META.get('HTTP_OVERWRITE', 'T')
@@ -247,7 +249,7 @@ class BaseDavServer(object):
         response['Date'] = http_date()
         if self.request.path in ('/', '*'):
             return response
-        res = self.get_resource(self.request.path)
+        res = self.get_resource()
         if not res.exists():
             res = res.get_parent()
             if not res.isdir():
@@ -261,7 +263,7 @@ class BaseDavServer(object):
         return response
 
     def doPROPFIND(self):
-        res = self.get_resource(self.request.path)
+        res = self.get_resource()
         if not res.exists():
             return HttpResponseNotFound()
         acl = self.get_access(res.path)
@@ -293,7 +295,7 @@ class BaseDavServer(object):
         return response
 
     def doPROPPATCH(self):
-        res = self.get_resource(self.request.path)
+        res = self.get_resource()
         if not res.exists():
             return HttpResponseNotFound()
         depth = self.get_depth(default="0")

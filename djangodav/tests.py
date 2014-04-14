@@ -18,8 +18,10 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
+from django.http import HttpRequest
 from django.test import TestCase
 from djangodav.base.resource import BaseDavResource
+from djangodav.base.server import BaseDavServer
 from djangodav.fs.resource import BaseFSDavResource
 from mock import patch, Mock
 
@@ -99,3 +101,17 @@ class TestFSDavResource(TestCase):
         self.assertEqual(children[0].path, ['path', 'to', 'name', 'child1'])
         self.assertEqual(children[1].path, ['path', 'to', 'name', 'child2'])
         listdir.assert_called_with('/some/folder/path/to/name')
+
+
+class TestDavBaseServer(TestCase):
+    class DavServer(BaseDavServer):
+        resource_class = Mock()
+
+    def setUp(self):
+        self.request = HttpRequest()
+        self.server = self.DavServer(self.request, '/path/to/name/')
+
+    def test_request(self):
+        self.server.get_resource()
+        self.DavServer.resource_class.assert_called_with('/path/to/name/')
+
