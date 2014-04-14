@@ -6,6 +6,7 @@ from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFoun
 from django.utils.functional import cached_property
 from django.utils.http import http_date, parse_etags
 from django.shortcuts import render_to_response
+from django.views.generic import View
 
 from djangodav.base.acl import DavAcl
 from djangodav.base.response import ResponseException, HttpResponsePreconditionFailed, HttpResponseCreated, HttpResponseNoContent, \
@@ -13,26 +14,19 @@ from djangodav.base.response import ResponseException, HttpResponsePreconditionF
     HttpResponseMultiStatus
 from djangodav.base.lock import DavLock
 from djangodav.base.property import DavProperty
-from djangodav.base.request import DavRequest
 from djangodav.utils import parse_time
 
 
 PATTERN_IF_DELIMITER = re.compile(r'(<([^>]+)>)|(\(([^\)]+)\))')
 
 
-class BaseDavServer(object):
+class BaseDavServer(View):
     resource_class = None
     lock_class = DavLock
-    request_class = DavRequest
     acl_class = DavAcl
     property_class = DavProperty
     template_name = 'djangodav/index.html'
-
-    def __init__(self, request, path):
-        self.path = path
-        self.request = self.request_class(self, request, path)
-        self.props = self.property_class(self)
-        self.locks = self.lock_class(self)
+    http_method_names = ['options', 'put', 'mkcol' 'head', 'get', 'delete', 'propfind', 'proppatch', 'copy', 'move', 'lock', 'unlock']
 
     def get_access(self, path):
         """Return permission as DavAcl object. A DavACL should have the following attributes:
@@ -101,16 +95,20 @@ class BaseDavServer(object):
                 cond_if = '<*>' + cond_if
             #for (tmpurl, url, tmpcontent, content) in PATTERN_IF_DELIMITER.findall(cond_if):
 
-    def get_response(self):
-        handler = getattr(self, 'do' + self.request.method, None)
+    def dispatch(self, request, path, *args, **kwargs):
+        self.path = path
+        self.props = self.property_class(self)
+        self.locks = self.lock_class(self)
+        if request.method.lower() in self.http_method_names:
+            handler = getattr(self, request.method.lower(), self.http_method_not_allowed)
+        else:
+            handler = self.http_method_not_allowed
         try:
-            if not callable(handler):
-                return HttpResponseNotAllowed(self.get_allowed_methods())
-            return handler()
+            return handler(request, *args, **kwargs)
         except ResponseException, e:
             return e.response
 
-    def doGET(self, head=False):
+    def get(self, request, path, head=False, *args, **kwargs):
         acl = self.get_access(self.resource.path)
         if not self.resource.exists():
             return HttpResponseNotFound()
@@ -136,15 +134,12 @@ class BaseDavServer(object):
             response['Date'] = http_date()
         return response
 
-    def doHEAD(self):
+    def head(self, request, path, *args, **kwargs):
         return self.doGET(head=True)
 
-    def doPOST(self):
-        return HttpResponseNotAllowed(self.get_allowed_methods())
-
-    def doPUT(self):
+    def put(self, request, path, *args, **kwargs):
         if self.resource.isdir():
-            return HttpResponseNotAllowed(self.get_allowed_methods())
+            return HttpResponseNotAllowed(self._allowed_methods())
         if not self.resource.get_parent().exists():
             return HttpResponseNotFound()
         acl = self.get_access(self.resource.path)
@@ -157,7 +152,7 @@ class BaseDavServer(object):
         else:
             return HttpResponseNoContent()
 
-    def doDELETE(self):
+    def delete(self, request, path, *args, **kwargs):
         if not self.resource.exists():
             return HttpResponseNotFound()
         acl = self.get_access(self.resource.path)
@@ -170,9 +165,9 @@ class BaseDavServer(object):
         response['Date'] = http_date()
         return response
 
-    def doMKCOL(self):
+    def mkcol(self, request, path, *args, **kwargs):
         if self.resource.exists():
-            return HttpResponseNotAllowed(self.get_allowed_methods())
+            return HttpResponseNotAllowed(self._allowed_methods())
         if not self.resource.get_parent().exists():
             return HttpResponseConflict()
         length = self.request.META.get('CONTENT_LENGTH', 0)
@@ -184,14 +179,13 @@ class BaseDavServer(object):
         self.resource.mkdir()
         return HttpResponseCreated()
 
-    def doCOPY(self, move=False):
-        res = self.get_resource()
-        if not res.exists():
+    def copy(self, request, path, move=False, *args, **kwargs):
+        if not self.resource.exists():
             return HttpResponseNotFound()
-        acl = self.get_access(res.path)
+        acl = self.get_access(self.resource.path)
         if not acl.relocate:
             return HttpResponseForbidden()
-        dst = urllib.unquote(self.request.META.get('HTTP_DESTINATION', ''))
+        dst = urllib.unquote(self.resource.request.META.get('HTTP_DESTINATION', ''))
         if not dst:
             return HttpResponseBadRequest('Destination header missing.')
         dparts = urlparse.urlparse(dst)
@@ -200,7 +194,7 @@ class BaseDavServer(object):
         if sparts.scheme != dparts.scheme or sparts.netloc != dparts.netloc:
             return HttpResponseBadGateway('Source and destination must have the same scheme and host.')
         # adjust path for our base url:
-        dst = self.get_resource_by_path(dparts.path[len(self.request.get_base()):])
+        dst = self.get_resource_by_path(dparts.path[len(self.resource.base_url):])
         if not dst.get_parent().exists():
             return HttpResponseConflict()
         overwrite = self.request.META.get('HTTP_OVERWRITE', 'T')
@@ -220,12 +214,12 @@ class BaseDavServer(object):
                 self.locks.del_locks(dst)
                 self.props.del_props(dst)
                 dst.delete()
-            errors = res.move(dst)
+            errors = self.resource.move(dst)
         else:
-            errors = res.copy(dst, depth=depth)
-        self.props.copy_props(res, dst, move=move)
+            errors = self.resource.copy(dst, depth=depth)
+        self.props.copy_props(self.resource, dst, move=move)
         if move:
-            self.locks.del_locks(res)
+            self.locks.del_locks(self.resource)
         if errors:
             response = HttpResponseMultiStatus()
         elif dst_exists:
@@ -234,16 +228,16 @@ class BaseDavServer(object):
             response = HttpResponseCreated()
         return response
 
-    def doMOVE(self):
-        return self.doCOPY(move=True)
+    def move(self, request, path, *args, **kwargs):
+        return self.copy(request, path, move=True, *args, **kwargs)
 
-    def doLOCK(self):
+    def lock(self, request, path, *args, **kwargs):
         return HttpResponseNotImplemented()
 
-    def doUNLOCK(self):
+    def unlock(self, request, path, *args, **kwargss):
         return HttpResponseNotImplemented()
 
-    def get_allowed_methods(self):
+    def _allowed_methods(self):
         allowed = ['OPTIONS']
         if not self.resource.exists():
             res = self.resource.get_parent()
@@ -255,18 +249,18 @@ class BaseDavServer(object):
             allowed += ['PUT']
         return allowed
 
-    def doOPTIONS(self):
+    def options(self, request, path, *args, **kwargs):
         response = HttpResponse(mimetype='text/html')
         response['DAV'] = '1,2'
         response['Date'] = http_date()
         if self.request.path in ('/', '*'):
             return response
-        response['Allow'] = ", ".join(self.get_allowed_methods())
+        response['Allow'] = ", ".join(self._allowed_methods())
         if self.resource.exists() and self.resource.isfile():
             response['Allow-Ranges'] = 'bytes'
         return response
 
-    def doPROPFIND(self):
+    def propfind(self, request, path, *args, **kwargs):
         if not self.resource.exists():
             return HttpResponseNotFound()
         acl = self.get_access(self.resource.path)
@@ -297,7 +291,7 @@ class BaseDavServer(object):
         response['Date'] = http_date()
         return response
 
-    def doPROPPATCH(self):
+    def proppatch(self, request, path, *args, **kwargs):
         if not self.resource.exists():
             return HttpResponseNotFound()
         depth = self.get_depth(default="0")
