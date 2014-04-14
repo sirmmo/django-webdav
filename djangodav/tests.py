@@ -33,6 +33,16 @@ class TestBaseDavResource(TestCase):
     def setUp(self):
         self.resource = self.DavResource("/path/to/name")
 
+    def test_root(self):
+        r = self.DavResource("/")
+        self.assertEqual(r.path, [])
+
+        with patch('djangodav.base.resource.BaseDavResource.isdir', Mock(return_value=True)):
+            self.assertEqual(r.get_url(), 'http://testserver/base/')
+
+        with patch('djangodav.base.resource.BaseDavResource.isdir', Mock(return_value=False)):
+            self.assertEqual(r.get_url(), 'http://testserver/base/')
+
     def test_path(self):
         self.assertEqual(self.resource.path, ['path', 'to', 'name'])
 

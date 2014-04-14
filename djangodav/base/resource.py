@@ -27,7 +27,7 @@ class BaseDavResource(object):
     base_url = None
 
     def __init__(self, path):
-        self.path = [-1]
+        self.path = []
         path = path.strip("/")
         if path:
             self.path = path.split("/")
