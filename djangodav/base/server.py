@@ -3,6 +3,7 @@ from xml.etree import ElementTree
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseNotAllowed, HttpResponseBadRequest, \
     HttpResponseNotModified
+from django.utils.functional import cached_property
 from django.utils.http import http_date, parse_etags
 from django.shortcuts import render_to_response
 
@@ -43,7 +44,8 @@ class BaseDavServer(object):
         """Return a DavResource object to represent the given path."""
         return self.resource_class(path)
 
-    def get_resource(self):
+    @cached_property
+    def resource(self):
         return self.get_resource_by_path(self.path)
 
     def get_depth(self, default='infinity'):
@@ -103,35 +105,34 @@ class BaseDavServer(object):
         handler = getattr(self, 'do' + self.request.method, None)
         try:
             if not callable(handler):
-                return HttpResponseNotAllowed()
+                return HttpResponseNotAllowed(self.get_allowed_methods())
             return handler()
         except ResponseException, e:
             return e.response
 
     def doGET(self, head=False):
-        res = self.get_resource()
-        acl = self.get_access(res.path)
-        if not res.exists():
+        acl = self.get_access(self.resource.path)
+        if not self.resource.exists():
             return HttpResponseNotFound()
-        if not head and res.isdir():
+        if not head and self.resource.isdir():
             if not acl.listing:
                 return HttpResponseForbidden()
-            return render_to_response(self.template_name, {'res': res})
+            return render_to_response(self.template_name, {'res': self.resource})
         else:
             if not acl.read:
                 return HttpResponseForbidden()
-            if head and res.exists():
+            if head and self.resource.exists():
                 response = HttpResponse()
             elif head:
                 response = HttpResponseNotFound()
             else:
                 # Do things the slow way:
-                response = HttpResponse(res.read())
-            if res.exists():
-                response['Content-Type'] = mimetypes.guess_type(res.get_name())
-                response['Content-Length'] = res.get_size()
-                response['Last-Modified'] = http_date(res.get_mtime_stamp())
-                response['ETag'] = res.get_etag()
+                response = HttpResponse(self.resource.read())
+            if self.resource.exists():
+                response['Content-Type'] = mimetypes.guess_type(self.resource.get_name())
+                response['Content-Length'] = self.resource.get_size()
+                response['Last-Modified'] = http_date(self.resource.get_mtime_stamp())
+                response['ETag'] = self.resource.get_etag()
             response['Date'] = http_date()
         return response
 
@@ -139,51 +140,48 @@ class BaseDavServer(object):
         return self.doGET(head=True)
 
     def doPOST(self):
-        return HttpResponseNotAllowed('POST method not allowed')
+        return HttpResponseNotAllowed(self.get_allowed_methods())
 
     def doPUT(self):
-        res = self.get_resource()
-        if res.isdir():
-            return HttpResponseNotAllowed()
-        if not res.get_parent().exists():
+        if self.resource.isdir():
+            return HttpResponseNotAllowed(self.get_allowed_methods())
+        if not self.resource.get_parent().exists():
             return HttpResponseNotFound()
-        acl = self.get_access(res.path)
+        acl = self.get_access(self.resource.path)
         if not acl.write:
             return HttpResponseForbidden()
-        created = not res.exists()
-        res.write(self.request)
+        created = not self.resource.exists()
+        self.resource.write(self.request)
         if created:
             return HttpResponseCreated()
         else:
             return HttpResponseNoContent()
 
     def doDELETE(self):
-        res = self.get_resource()
-        if not res.exists():
+        if not self.resource.exists():
             return HttpResponseNotFound()
-        acl = self.get_access(res.path)
+        acl = self.get_access(self.resource.path)
         if not acl.delete:
             return HttpResponseForbidden()
-        self.locks.del_locks(res)
-        self.props.del_props(res)
-        res.delete()
+        self.locks.del_locks(self.resource)
+        self.props.del_props(self.resource)
+        self.resource.delete()
         response = HttpResponseNoContent()
         response['Date'] = http_date()
         return response
 
     def doMKCOL(self):
-        res = self.get_resource()
-        if res.exists():
-            return HttpResponseNotAllowed()
-        if not res.get_parent().exists():
+        if self.resource.exists():
+            return HttpResponseNotAllowed(self.get_allowed_methods())
+        if not self.resource.get_parent().exists():
             return HttpResponseConflict()
         length = self.request.META.get('CONTENT_LENGTH', 0)
         if length and int(length) != 0:
             return HttpResponseMediatypeNotSupported()
-        acl = self.get_access(res.path)
+        acl = self.get_access(self.resource.path)
         if not acl.create:
             return HttpResponseForbidden()
-        res.mkdir()
+        self.resource.mkdir()
         return HttpResponseCreated()
 
     def doCOPY(self, move=False):
@@ -245,30 +243,33 @@ class BaseDavServer(object):
     def doUNLOCK(self):
         return HttpResponseNotImplemented()
 
+    def get_allowed_methods(self):
+        allowed = ['OPTIONS']
+        if not self.resource.exists():
+            res = self.resource.get_parent()
+            if not res.isdir():
+                return HttpResponseNotFound()
+            return allowed + ['PUT', 'MKCOL']
+        allowed += ['HEAD', 'GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK']
+        if self.resource.isfile():
+            allowed += ['PUT']
+        return allowed
+
     def doOPTIONS(self):
         response = HttpResponse(mimetype='text/html')
         response['DAV'] = '1,2'
         response['Date'] = http_date()
         if self.request.path in ('/', '*'):
             return response
-        res = self.get_resource()
-        if not res.exists():
-            res = res.get_parent()
-            if not res.isdir():
-                return HttpResponseNotFound()
-            response['Allow'] = 'OPTIONS PUT MKCOL'
-        elif res.isdir():
-            response['Allow'] = 'OPTIONS HEAD GET DELETE PROPFIND PROPPATCH COPY MOVE LOCK UNLOCK'
-        else:
-            response['Allow'] = 'OPTIONS HEAD GET PUT DELETE PROPFIND PROPPATCH COPY MOVE LOCK UNLOCK'
+        response['Allow'] = ", ".join(self.get_allowed_methods())
+        if self.resource.exists() and self.resource.isfile():
             response['Allow-Ranges'] = 'bytes'
         return response
 
     def doPROPFIND(self):
-        res = self.get_resource()
-        if not res.exists():
+        if not self.resource.exists():
             return HttpResponseNotFound()
-        acl = self.get_access(res.path)
+        acl = self.get_access(self.resource.path)
         if not acl.listing:
             return HttpResponseForbidden()
         depth = self.get_depth()
@@ -288,7 +289,7 @@ class BaseDavServer(object):
                     for pr in el:
                         props.append(pr.tag)
         msr = ElementTree.Element('{DAV:}multistatus')
-        for child in res.get_descendants(depth=depth, include_self=True):
+        for child in self.resource.get_descendants(depth=depth, include_self=True):
             response = ElementTree.SubElement(msr, '{DAV:}response')
             ElementTree.SubElement(response, '{DAV:}href').text = child.get_url()
             self.props.get_propstat(child, response, *props)
@@ -297,8 +298,7 @@ class BaseDavServer(object):
         return response
 
     def doPROPPATCH(self):
-        res = self.get_resource()
-        if not res.exists():
+        if not self.resource.exists():
             return HttpResponseNotFound()
         depth = self.get_depth(default="0")
         if depth != 0:
