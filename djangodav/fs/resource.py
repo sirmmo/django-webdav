@@ -78,7 +78,6 @@ class BaseFSDavResource(BaseDavResource):
         """Return the modified time as datetime object."""
         return datetime.datetime.fromtimestamp(self.get_mtime_stamp())
 
-    # TODO: combine this and get_descendants()
     def get_children(self):
         """Return an iterator of all direct children of this resource."""
         for child in os.listdir(self.get_abs_path()):

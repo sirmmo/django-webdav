@@ -62,7 +62,7 @@ class TestBaseDavResource(TestCase):
 
 class MyFSDavResource(BaseFSDavResource):
     base_url = 'http://testserver/base/'
-    root = '/tmp/'
+    root = '/some/folder/'
 
 
 class TestFSDavResource(TestCase):
@@ -74,22 +74,31 @@ class TestFSDavResource(TestCase):
     def test_isdir(self, isdir):
         isdir.return_value = True
         self.assertTrue(self.resource.isdir())
-        isdir.assert_called_with('/tmp/path/to/name')
+        isdir.assert_called_with('/some/folder/path/to/name')
 
     @patch('djangodav.fs.resource.os.path.isfile')
     def test_isfile(self, isfile):
         isfile.return_value = True
         self.assertTrue(self.resource.isfile())
-        isfile.assert_called_with('/tmp/path/to/name')
+        isfile.assert_called_with('/some/folder/path/to/name')
 
     @patch('djangodav.fs.resource.os.path.exists')
     def test_isfile(self, exists):
         exists.return_value = True
         self.assertTrue(self.resource.exists())
-        exists.assert_called_with('/tmp/path/to/name')
+        exists.assert_called_with('/some/folder/path/to/name')
 
     @patch('djangodav.fs.resource.os.path.getsize')
     def test_get_size(self, getsize):
         getsize.return_value = 42
         self.assertEquals(self.resource.get_size(), 42)
-        getsize.assert_called_with('/tmp/path/to/name')
+        getsize.assert_called_with('/some/folder/path/to/name')
+
+    def test_get_abs_path(self):
+        self.assertEquals(self.resource.get_abs_path(), '/some/folder/path/to/name')
+
+    @patch('djangodav.fs.resource.os.listdir')
+    def test_get_children(self, listdir):
+        listdir.return_value=[]
+        self.assertEqual(list(self.resource.get_children()), [])
+        listdir.assert_called_with('/some/folder/path/to/name')
