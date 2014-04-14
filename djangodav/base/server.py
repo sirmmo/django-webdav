@@ -26,7 +26,7 @@ class BaseDavServer(View):
     acl_class = DavAcl
     property_class = DavProperty
     template_name = 'djangodav/index.html'
-    http_method_names = ['options', 'put', 'mkcol' 'head', 'get', 'delete', 'propfind', 'proppatch', 'copy', 'move', 'lock', 'unlock']
+    http_method_names = ['options', 'put', 'mkcol', 'head', 'get', 'delete', 'propfind', 'proppatch', 'copy', 'move', 'lock', 'unlock']
 
     def get_access(self, path):
         """Return permission as DavAcl object. A DavACL should have the following attributes:
@@ -124,10 +124,9 @@ class BaseDavServer(View):
             elif head:
                 response = HttpResponseNotFound()
             else:
-                # Do things the slow way:
                 response = HttpResponse(self.resource.read())
             if self.resource.exists():
-                response['Content-Type'] = mimetypes.guess_type(self.resource.get_name())
+                response['Content-Type'] = mimetypes.guess_type(self.resource.get_name())[0]
                 response['Content-Length'] = self.resource.get_size()
                 response['Last-Modified'] = http_date(self.resource.get_mtime_stamp())
                 response['ETag'] = self.resource.get_etag()
@@ -135,7 +134,7 @@ class BaseDavServer(View):
         return response
 
     def head(self, request, path, *args, **kwargs):
-        return self.doGET(head=True)
+        return self.get(request, path, head=True, *args, **kwargs)
 
     def put(self, request, path, *args, **kwargs):
         if self.resource.isdir():
