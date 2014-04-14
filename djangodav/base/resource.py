@@ -26,9 +26,8 @@ from djangodav.utils import url_join
 class BaseDavResource(object):
     base_url = None
 
-    def __init__(self, request, path):
+    def __init__(self, path):
         self.path = [-1]
-        self.request = request
         path = path.strip("/")
         if path:
             self.path = path.split("/")
@@ -47,7 +46,7 @@ class BaseDavResource(object):
         return "/" + "/".join(path) + "/" if path else ""
 
     def get_parent(self):
-        return self.__class__(self.request, self.get_dirname())
+        return self.__class__(self.get_dirname())
 
     def get_descendants(self, depth=1, include_self=True):
         """Return an iterator of all descendants of this resource."""

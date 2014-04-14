@@ -18,7 +18,6 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
-from django.http import HttpRequest
 from django.test import TestCase
 from djangodav.base.resource import BaseDavResource
 from djangodav.fs.resource import BaseFSDavResource
@@ -31,8 +30,7 @@ class MyDavResource(BaseDavResource):
 
 class TestBaseDavResource(TestCase):
     def setUp(self):
-        self.request = HttpRequest()
-        self.resource = MyDavResource(self.request, "/path/to/name")
+        self.resource = MyDavResource("/path/to/name")
 
     def test_path(self):
         self.assertEqual(self.resource.path, ['path', 'to', 'name'])
@@ -67,8 +65,7 @@ class MyFSDavResource(BaseFSDavResource):
 
 class TestFSDavResource(TestCase):
     def setUp(self):
-        self.request = HttpRequest()
-        self.resource = MyFSDavResource(self.request, "/path/to/name")
+        self.resource = MyFSDavResource("/path/to/name")
 
     @patch('djangodav.fs.resource.os.path.isdir')
     def test_isdir(self, isdir):

@@ -81,7 +81,7 @@ class BaseFSDavResource(BaseDavResource):
     def get_children(self):
         """Return an iterator of all direct children of this resource."""
         for child in os.listdir(self.get_abs_path()):
-            yield self.__class__(self.server, os.path.join(self.path, child))
+            yield self.__class__(url_join(self.get_path, child))
 
     def write(self, content):
         raise NotImplemented
@@ -117,7 +117,7 @@ class BaseFSDavResource(BaseDavResource):
             # in case of infinity.
             if depth != 0:
                 for child in self.get_children():
-                    child.copy(self.__class__(self.server, safe_join(destination.path, child.get_name())),
+                    child.copy(self.__class__(self.request, safe_join(destination.path, child.get_name())),
                                depth=depth-1)
         else:
             if destination.isdir():
@@ -133,7 +133,7 @@ class BaseFSDavResource(BaseDavResource):
         if self.isdir():
             destination.mkdir()
             for child in self.get_children():
-                child.move(self.__class__(self.server, safe_join(destination.path, child.get_name())))
+                child.move(self.__class__(self.request, safe_join(destination.path, child.get_name())))
             self.delete()
         else:
             os.rename(self.get_abs_path(), destination.get_abs_path())
@@ -192,5 +192,4 @@ class RedirectFSDavResource(BaseFSDavResource):
         response['Content-Length'] = self.get_size()
         response['Last-Modified'] = http_date(self.get_mtime_stamp())
         response['ETag'] = self.get_etag()
-
         raise ResponseException(response)
