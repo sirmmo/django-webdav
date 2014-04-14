@@ -39,9 +39,12 @@ class BaseDavServer(object):
         system."""
         return self.acl_class(listing=True, read=True, full=False)
 
-    def get_resource(self):
+    def get_resource_by_path(self, path):
         """Return a DavResource object to represent the given path."""
-        return self.resource_class(self.path)
+        return self.resource_class(path)
+
+    def get_resource(self):
+        return self.get_resource_by_path(self.path)
 
     def get_depth(self, default='infinity'):
         depth = str(self.request.META.get('HTTP_DEPTH', default)).lower()
@@ -199,7 +202,7 @@ class BaseDavServer(object):
         if sparts.scheme != dparts.scheme or sparts.netloc != dparts.netloc:
             return HttpResponseBadGateway('Source and destination must have the same scheme and host.')
         # adjust path for our base url:
-        dst = self.resource_class(dparts.path[len(self.request.get_base()):])
+        dst = self.get_resource_by_path(dparts.path[len(self.request.get_base()):])
         if not dst.get_parent().exists():
             return HttpResponseConflict()
         overwrite = self.request.META.get('HTTP_OVERWRITE', 'T')
