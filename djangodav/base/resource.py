@@ -33,7 +33,7 @@ class BaseDavResource(object):
             self.path = path.split("/")
 
     def get_path(self):
-        return "/".join(self.path) + ("/" * int(self.isdir()))
+        return "/".join(self.path) + ("/" * self.isdir())
 
     def get_url(self):
         return url_join(self.base_url, self.get_path())
