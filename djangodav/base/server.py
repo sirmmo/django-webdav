@@ -104,12 +104,12 @@ class BaseDavServer(View):
         else:
             handler = self.http_method_not_allowed
         try:
-            return handler(request, *args, **kwargs)
+            return handler(request, path, *args, **kwargs)
         except ResponseException, e:
             return e.response
 
     def get(self, request, path, head=False, *args, **kwargs):
-        acl = self.get_access(self.resource.path)
+        acl = self.get_access(self.path)
         if not self.resource.exists():
             return HttpResponseNotFound()
         if not head and self.resource.isdir():
@@ -142,7 +142,7 @@ class BaseDavServer(View):
             return HttpResponseNotAllowed(self._allowed_methods())
         if not self.resource.get_parent().exists():
             return HttpResponseNotFound()
-        acl = self.get_access(self.resource.path)
+        acl = self.get_access(self.path)
         if not acl.write:
             return HttpResponseForbidden()
         created = not self.resource.exists()
@@ -155,7 +155,7 @@ class BaseDavServer(View):
     def delete(self, request, path, *args, **kwargs):
         if not self.resource.exists():
             return HttpResponseNotFound()
-        acl = self.get_access(self.resource.path)
+        acl = self.get_access(self.path)
         if not acl.delete:
             return HttpResponseForbidden()
         self.locks.del_locks(self.resource)
@@ -173,7 +173,7 @@ class BaseDavServer(View):
         length = self.request.META.get('CONTENT_LENGTH', 0)
         if length and int(length) != 0:
             return HttpResponseMediatypeNotSupported()
-        acl = self.get_access(self.resource.path)
+        acl = self.get_access(self.path)
         if not acl.create:
             return HttpResponseForbidden()
         self.resource.mkdir()
@@ -182,7 +182,7 @@ class BaseDavServer(View):
     def copy(self, request, path, move=False, *args, **kwargs):
         if not self.resource.exists():
             return HttpResponseNotFound()
-        acl = self.get_access(self.resource.path)
+        acl = self.get_access(self.path)
         if not acl.relocate:
             return HttpResponseForbidden()
         dst = urllib.unquote(self.resource.request.META.get('HTTP_DESTINATION', ''))
@@ -253,7 +253,7 @@ class BaseDavServer(View):
         response = HttpResponse(mimetype='text/html')
         response['DAV'] = '1,2'
         response['Date'] = http_date()
-        if self.request.path in ('/', '*'):
+        if self.path in ('/', '*'):
             return response
         response['Allow'] = ", ".join(self._allowed_methods())
         if self.resource.exists() and self.resource.isfile():
@@ -263,7 +263,7 @@ class BaseDavServer(View):
     def propfind(self, request, path, *args, **kwargs):
         if not self.resource.exists():
             return HttpResponseNotFound()
-        acl = self.get_access(self.resource.path)
+        acl = self.get_access(self.path)
         if not acl.listing:
             return HttpResponseForbidden()
         depth = self.get_depth()

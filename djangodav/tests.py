@@ -115,13 +115,17 @@ class TestFSDavResource(TestCase):
 
 class TestDavBaseServer(TestCase):
     class DavServer(BaseDavServer):
-        resource_class = Mock()
+        resource_class = Mock
 
-    def setUp(self):
-        self.request = HttpRequest()
-        self.server = self.DavServer(self.request, '/path/to/name/')
+    def send(self, method='GET', *args, **kwargs):
+        request = HttpRequest()
+        request.method = method
+        return self.DavServer.as_view()(request, *args, **kwargs)
 
-    def test_get_resource(self):
-        self.server.resource
-        self.server.resource
-        self.DavServer.resource_class.assert_called_once_with('/path/to/name/')
+    @patch('djangodav.base.server.BaseDavServer.resource')
+    def test_get(self, resource):
+        resource = Mock()
+        resource.get_children.return_value = [Mock(), Mock()]
+        resource.exists.return_value = True
+        resp = self.send('GET', '/')
+        self.assertEqual(resp.status_code, 200)
