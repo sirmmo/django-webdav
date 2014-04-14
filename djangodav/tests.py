@@ -24,7 +24,6 @@ from djangodav.fs.resource import BaseFSDavResource
 from mock import patch, Mock
 
 
-
 class TestBaseDavResource(TestCase):
     class DavResource(BaseDavResource):
         base_url = 'http://testserver/base/'
