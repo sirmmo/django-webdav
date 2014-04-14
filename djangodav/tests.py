@@ -114,4 +114,3 @@ class TestDavBaseServer(TestCase):
     def test_request(self):
         self.server.get_resource()
         self.DavServer.resource_class.assert_called_with('/path/to/name/')
-
