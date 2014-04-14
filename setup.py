@@ -48,6 +48,8 @@ with this such as django-digest etc. to provide a powerful WebDAV server.
         'Programming Language :: Python',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
+    require=["Django>=1.3.0"],
+    tests_require=["Django>=1.3.0", "mock==1.0.1"],
     include_package_data=True,
     zip_safe=False,
     test_suite='runtests.runtests'
