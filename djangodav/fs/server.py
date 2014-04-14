@@ -19,9 +19,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from djangodav.base.server import BaseDavServer
-from djangodav.fs.resource import FSDavResource
+from djangodav.fs.resource import DummyFSDAVResource
 
 
-class FSDavServer(BaseDavServer):
-    resource_class = FSDavResource
-    root = None
+class DummyFSDavServer(BaseDavServer):
+    resource_class = DummyFSDAVResource

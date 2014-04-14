@@ -25,7 +25,6 @@ import datetime
 import shutil
 import urllib
 
-from django.conf import settings
 from django.http import HttpResponse
 from django.utils.http import http_date
 
@@ -34,16 +33,18 @@ from djangodav.base.response import ResponseException
 from djangodav.utils import safe_join, url_join
 
 
-class FSDavResource(BaseDavResource):
+class BaseFSDavResource(BaseDavResource):
     """Implements an interface to the file system. This can be subclassed to provide
     a virtual file system (like say in MySQL). This default implementation simply uses
     python's os library to do most of the work."""
+
+    root = None
 
     def get_abs_path(self):
         """Return the absolute path of the resource. Used internally to interface with
         an actual file system. If you override all other methods, this one will not
         be used."""
-        return safe_join(self.server.root, self.path)
+        return os.path.join(self.root, *self.path)
 
     def isdir(self):
         """Return True if this resource is a directory (collection in WebDAV parlance)."""
@@ -84,36 +85,10 @@ class FSDavResource(BaseDavResource):
             yield self.__class__(self.server, os.path.join(self.path, child))
 
     def write(self, content):
-        with file(self.get_abs_path(), 'w') as f:
-            shutil.copyfileobj(content, f)
+        raise NotImplemented
 
     def read(self):
-        use_sendfile = getattr(settings, 'DAV_USE_SENDFILE', '')
-        use_redirect = getattr(settings, 'DAV_USE_REDIRECT', '')
-
-        if not use_sendfile and use_redirect:
-            return file(self.get_abs_path(), 'r').read()
-
-        response = HttpResponse()
-
-        if use_sendfile == 'x-sendfile':
-            full_path = self.get_abs_path().encode('utf-8')
-            if getattr(settings, 'DAV_USE_SENDFILE_QUOTE', True):
-                full_path = urllib.quote(full_path)
-            response['X-SendFile'] = full_path
-
-        elif use_redirect == 'x-accel-redir':
-            full_path = self.get_abs_path().encode('utf-8')
-            full_path = url_join(getattr(settings, 'DAV_USE_REDIRECT_TO', '/'), full_path)
-            response['X-Accel-Redirect'] = full_path
-            response['X-Accel-Charset'] = 'utf-8'
-
-        response['Content-Type'] = mimetypes.guess_type(self.get_name())
-        response['Content-Length'] = self.get_size()
-        response['Last-Modified'] = http_date(self.get_mtime_stamp())
-        response['ETag'] = self.get_etag()
-
-        raise ResponseException(response)
+        raise NotImplemented
 
     def delete(self):
         """Delete the resource, recursive is implied."""
@@ -174,3 +149,49 @@ class FSDavResource(BaseDavResource):
         hashsum.update(str(self.get_mtime_stamp()))
         hashsum.update(str(self.get_size()))
         return hashsum.hexdigest()
+
+
+class DummyReadFSDavResource(BaseFSDavResource):
+    def read(self):
+        return file(self.get_abs_path(), 'r').read()
+
+
+class DummyWriteFSDavResource(BaseFSDavResource):
+    def write(self, content):
+        with file(self.get_abs_path(), 'w') as f:
+            shutil.copyfileobj(content, f)
+
+
+class DummyFSDAVResource(DummyReadFSDavResource, DummyWriteFSDavResource, BaseFSDavResource):
+    pass
+
+
+class SendFileFSDavResource(BaseFSDavResource):
+    quote = False
+
+    def read(self):
+        response = HttpResponse()
+        full_path = self.get_abs_path().encode('utf-8')
+        if self.quote:
+            full_path = urllib.quote(full_path)
+        response['X-SendFile'] = full_path
+        response['Content-Type'] = mimetypes.guess_type(self.get_name())
+        response['Content-Length'] = self.get_size()
+        response['Last-Modified'] = http_date(self.get_mtime_stamp())
+        response['ETag'] = self.get_etag()
+        raise ResponseException(response)
+
+
+class RedirectFSDavResource(BaseFSDavResource):
+    prefix = "/"
+
+    def read(self):
+        response = HttpResponse()
+        response['X-Accel-Redirect'] = url_join(self.prefix, self.get_path().path.encode('utf-8'))
+        response['X-Accel-Charset'] = 'utf-8'
+        response['Content-Type'] = mimetypes.guess_type(self.get_name())
+        response['Content-Length'] = self.get_size()
+        response['Last-Modified'] = http_date(self.get_mtime_stamp())
+        response['ETag'] = self.get_etag()
+
+        raise ResponseException(response)

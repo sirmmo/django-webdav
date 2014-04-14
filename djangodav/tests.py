@@ -21,15 +21,8 @@
 from django.http import HttpRequest
 from django.test import TestCase
 from djangodav.base.resource import BaseDavResource
-from djangodav.base.server import BaseDavServer
-from djangodav.fs.resource import FSDavResource
-from djangodav.fs.server import FSDavServer
+from djangodav.fs.resource import BaseFSDavResource
 from mock import patch, Mock
-
-
-class MyFSDavServer(FSDavServer):
-    base_url = 'http://testserver/base/'
-    root = '/tmp/'
 
 
 class MyDavResource(BaseDavResource):
@@ -67,11 +60,15 @@ class TestBaseDavResource(TestCase):
         self.assertEqual(self.resource.get_name(), 'name')
 
 
+class MyFSDavResource(BaseFSDavResource):
+    base_url = 'http://testserver/base/'
+    root = '/tmp/'
+
+
 class TestFSDavResource(TestCase):
     def setUp(self):
         self.request = HttpRequest()
-        self.server = MyFSDavServer(self.request, "/path/to/name")
-        self.resource = FSDavResource(self.server, "/path/to/name")
+        self.resource = MyFSDavResource(self.request, "/path/to/name")
 
     @patch('djangodav.fs.resource.os.path.isdir')
     def test_isdir(self, isdir):
