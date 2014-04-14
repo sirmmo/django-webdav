@@ -14,7 +14,7 @@ from djangodav.response import ResponseException, HttpResponsePreconditionFailed
     HttpResponseMultiStatus
 from djangodav.base.lock import DavLock
 from djangodav.base.property import DavProperty
-from djangodav.utils import parse_time
+from djangodav.utils import parse_time, url_join
 
 
 PATTERN_IF_DELIMITER = re.compile(r'(<([^>]+)>)|(\(([^\)]+)\))')
@@ -99,6 +99,7 @@ class WebDavView(View):
         self.path = path
         self.props = self.property_class(self)
         self.locks = self.lock_class(self)
+        self.base_url = request.META['PATH_INFO'][:-len(path)]
         if request.method.lower() in self.http_method_names:
             handler = getattr(self, request.method.lower(), self.http_method_not_allowed)
         else:
@@ -284,7 +285,7 @@ class WebDavView(View):
         msr = ElementTree.Element('{DAV:}multistatus')
         for child in self.resource.get_descendants(depth=depth, include_self=True):
             response = ElementTree.SubElement(msr, '{DAV:}response')
-            ElementTree.SubElement(response, '{DAV:}href').text = child.get_url()
+            ElementTree.SubElement(response, '{DAV:}href').text = url_join(self.base_url, child.get_path())
             self.props.get_propstat(child, response, *props)
         response = HttpResponseMultiStatus(ElementTree.tostring(msr, 'UTF-8'), mimetype='application/xml')
         response['Date'] = http_date()

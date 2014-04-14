@@ -24,8 +24,6 @@ from djangodav.utils import url_join
 
 
 class BaseDavResource(object):
-    base_url = None
-
     def __init__(self, path):
         self.path = []
         path = path.strip("/")
@@ -33,10 +31,7 @@ class BaseDavResource(object):
             self.path = path.split("/")
 
     def get_path(self):
-        return "/".join(self.path) + ("/" * self.isdir())
-
-    def get_url(self):
-        return url_join(self.base_url, self.get_path())
+        return "/".join(self.path) + ("/" * (self.isdir()))
 
     def get_name(self):
         return self.path[-1]

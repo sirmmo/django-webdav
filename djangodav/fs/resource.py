@@ -117,7 +117,7 @@ class BaseFSDavResource(BaseDavResource):
             # in case of infinity.
             if depth != 0:
                 for child in self.get_children():
-                    child.copy(self.__class__(self.request, safe_join(destination.path, child.get_name())),
+                    child.copy(self.__class__(safe_join(destination.path, child.get_name())),
                                depth=depth-1)
         else:
             if destination.isdir():
@@ -133,7 +133,7 @@ class BaseFSDavResource(BaseDavResource):
         if self.isdir():
             destination.mkdir()
             for child in self.get_children():
-                child.move(self.__class__(self.request, safe_join(destination.path, child.get_name())))
+                child.move(self.__class__(safe_join(destination.path, child.get_name())))
             self.delete()
         else:
             os.rename(self.get_abs_path(), destination.get_abs_path())

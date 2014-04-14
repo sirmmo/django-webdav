@@ -25,21 +25,9 @@ from mock import patch, Mock
 
 
 class TestBaseDavResource(TestCase):
-    class DavResource(BaseDavResource):
-        base_url = 'http://testserver/base/'
 
     def setUp(self):
-        self.resource = self.DavResource("/path/to/name")
-
-    def test_root(self):
-        r = self.DavResource("/")
-        self.assertEqual(r.path, [])
-
-        with patch('djangodav.base.resource.BaseDavResource.isdir', Mock(return_value=True)):
-            self.assertEqual(r.get_url(), 'http://testserver/base/')
-
-        with patch('djangodav.base.resource.BaseDavResource.isdir', Mock(return_value=False)):
-            self.assertEqual(r.get_url(), 'http://testserver/base/')
+        self.resource = BaseDavResource("/path/to/name")
 
     def test_path(self):
         self.assertEqual(self.resource.path, ['path', 'to', 'name'])
@@ -51,10 +39,6 @@ class TestBaseDavResource(TestCase):
     @patch('djangodav.base.resource.BaseDavResource.isdir', Mock(return_value=False))
     def test_get_path_object(self):
         self.assertEqual(self.resource.get_path(), 'path/to/name')
-
-    @patch('djangodav.base.resource.BaseDavResource.isdir', Mock(return_value=True))
-    def test_get_url_folder(self):
-        self.assertEqual(self.resource.get_url(), 'http://testserver/base/path/to/name/')
 
     @patch('djangodav.base.resource.BaseDavResource.get_children', Mock(return_value=[]))
     def test_get_descendants(self):
