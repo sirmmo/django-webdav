@@ -191,7 +191,7 @@ class WebDavView(View):
         acl = self.get_access(self.path)
         if not acl.relocate:
             return HttpResponseForbidden()
-        dst = urllib.unquote(self.resource.request.META.get('HTTP_DESTINATION', ''))
+        dst = urllib.unquote(request.META.get('HTTP_DESTINATION', ''))
         if not dst:
             return HttpResponseBadRequest('Destination header missing.')
         dparts = urlparse.urlparse(dst)
@@ -200,7 +200,7 @@ class WebDavView(View):
         if sparts.scheme != dparts.scheme or sparts.netloc != dparts.netloc:
             return HttpResponseBadGateway('Source and destination must have the same scheme and host.')
         # adjust path for our base url:
-        dst = self.get_resource_by_path(dparts.path[len(self.resource.base_url):])
+        dst = self.get_resource_by_path(dparts.path[len(self.base_url):])
         if not dst.get_parent().exists():
             return HttpResponseConflict()
         overwrite = self.request.META.get('HTTP_OVERWRITE', 'T')
