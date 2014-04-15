@@ -81,7 +81,7 @@ class BaseFSDavResource(BaseDavResource):
     def get_children(self):
         """Return an iterator of all direct children of this resource."""
         for child in os.listdir(self.get_abs_path()):
-            yield self.__class__(url_join(self.get_path(), child))
+            yield self.__class__(url_join(self.get_path(), child.decode('utf8')))
 
     def write(self, content):
         raise NotImplemented
