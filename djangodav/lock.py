@@ -27,7 +27,7 @@ class DummyLock(BaseLock):
     def get(self):
         pass
 
-    def acquire(self, type, scope, depth, owner, timeout):
+    def acquire(self, blocking=True):
         pass
 
     def release(self):
