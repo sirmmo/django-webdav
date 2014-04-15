@@ -18,6 +18,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
+from djangodav.lock import DummyLock
 
 from djangodav.views import WebDavView
 
@@ -28,5 +29,5 @@ from samples.fs.resource import TempDirWebDavResource
 
 urlpatterns = patterns('',
     # This will simply export the directory configured by DAV_ROOT in settings.py
-    (r'^temp(?P<path>.*)$', WebDavView.as_view(resource_class=TempDirWebDavResource)),
+    (r'^temp(?P<path>.*)$', WebDavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock)),
 )

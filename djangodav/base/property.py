@@ -134,6 +134,23 @@ class DavProperty(object):
         if not names:
             names = avail_names
         for name in names:
+            # propname
+            # Tag.multistatus(
+            #     Tag.response(
+            #         Tag.href(url_join(self.base_url, self.resource.get_path())),
+            #         Tag.propstat(
+            #             Tag.prop(
+            #                 Tag.creationdate(),
+            #                 Tag.displayname(),
+            #                 Tag.getcontentlength(),
+            #                 Tag.getlastmodified(),
+            #                 Tag.resourcetype(Tag.collection()),
+            #             ),
+            #             Tag.status(text='HTTP/1.1 200 OK'),
+            #         ),
+            #     ),
+            # )
+
             if name in avail_names:
                 value = self.get_prop_value(res, name)
                 if el200 is None:

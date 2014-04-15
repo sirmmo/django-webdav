@@ -1,5 +1,5 @@
 import mimetypes, urllib, urlparse, re
-from xml.etree import ElementTree
+from xml import etree
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseNotAllowed, HttpResponseBadRequest, \
     HttpResponseNotModified
@@ -13,22 +13,20 @@ from django.views.generic import View
 from djangodav.base.acl import DavAcl
 from djangodav.response import ResponseException, HttpResponsePreconditionFailed, HttpResponseCreated, HttpResponseNoContent, \
     HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, HttpResponseNotImplemented, \
-    HttpResponseMultiStatus
-from djangodav.base.lock import DavLock
+    HttpResponseMultiStatus, HttpResponseLocked
 from djangodav.base.property import DavProperty
-from djangodav.utils import parse_time, url_join
-
+from djangodav.utils import WEBDAV_NS, WEBDAV_NSMAP, D, url_join
 
 PATTERN_IF_DELIMITER = re.compile(r'(<([^>]+)>)|(\(([^\)]+)\))')
 
 
 class WebDavView(View):
     resource_class = None
-    lock_class = DavLock
+    lock_class = None
     acl_class = DavAcl
     property_class = DavProperty
     template_name = 'djangodav/index.html'
-    http_method_names = ['options', 'put', 'mkcol', 'head', 'get', 'delete', 'propfind', 'proppatch', 'copy', 'move', ] #'lock', 'unlock'
+    http_method_names = ['options', 'put', 'mkcol', 'head', 'get', 'delete', 'propfind', 'proppatch', 'copy', 'move', 'lock', 'unlock']
 
     def get_access(self, path):
         """Return permission as DavAcl object. A DavACL should have the following attributes:
@@ -103,6 +101,14 @@ class WebDavView(View):
         self.props = self.property_class(self)
         self.locks = self.lock_class(self)
         self.base_url = request.META['PATH_INFO'][:-len(path)]
+
+        meta = request.META.get
+        if meta('Content-Type', '').starts_with('text/xml') and int(meta('Content-Length', 0)) > 0:
+            kwargs['xbody'] = etree.XPathDocumentEvaluator(
+                etree.parse(request, etree.XMLParser(ns_clean=True)),
+                namespaces=WEBDAV_NSMAP
+            )
+
         if request.method.lower() in self.http_method_names:
             handler = getattr(self, request.method.lower(), self.http_method_not_allowed)
         else:
@@ -237,11 +243,69 @@ class WebDavView(View):
     def move(self, request, path, *args, **kwargs):
         return self.copy(request, path, move=True, *args, **kwargs)
 
-    def lock(self, request, path, *args, **kwargs):
-        return HttpResponseNotImplemented()
+    def lock(self, request, path, xbody, *args, **kwargs):
+        # TODO Lock refreshing
+
+        try:
+            depth = int(request.META.get('Depth', '0'))
+        except ValueError:
+            return HttpResponseBadRequest('Wrong depth')
+
+        try:
+            timeout = int(request.META.get('Depth', 'Seconds-600')[len('Seconds-'):])
+        except ValueError:
+            return HttpResponseBadRequest('Wrong timeout')
+
+        owner = None
+        try:
+            owner_obj = xbody('/D:lockinfo/D:owner')[0]  # TODO: WEBDAV_NS
+        except IndexError:
+            owner_obj = None
+        else:
+            if owner_obj.text:
+                owner = owner_obj.text
+            if len(owner_obj):
+                owner = owner_obj[0].text
+
+        try:
+            lockscope_obj = xbody('/D:lockinfo/D:lockscope/*')[0] # TODO: WEBDAV_NS
+        except IndexError:
+            return HttpResponseBadRequest('Lock scope required')
+        else:
+            lockscope = lockscope_obj.xpath('local-name()')
+
+        try:
+            locktype_obj = xbody('/D:lockinfo/D:lockstype/*')[0] # TODO: WEBDAV_NS
+        except IndexError:
+            return HttpResponseBadRequest('Lock type required')
+        else:
+            locktype = locktype_obj.xpath('local-name()')
+
+        token = self.lock_class(self.resource).acquire(lockscope, locktype, depth, timeout, owner)
+        if not token:
+            return HttpResponseLocked('Already locked')
+
+        return HttpResponse(
+            D.prop(
+                D.activelock(*([
+                    D.locktype(locktype_obj),
+                    D.lockscope(lockscope_obj),
+                    D.depth(depth),
+                    D.timeout("Second-%s" % timeout),
+                    D.locktoken(D.href('opaquelocktoken:%s' % token))]
+                    + ([owner_obj] if owner_obj else [])
+                ))
+            ),
+            mimetype='application/xml'
+        )
 
     def unlock(self, request, path, *args, **kwargss):
-        return HttpResponseNotImplemented()
+        token = request.META.get('Lock-Token')
+        if not token:
+            return HttpResponseBadRequest('Lock token required')
+        if not self.lock_class(self.resource).release(token):
+            return HttpResponseForbidden()
+        return HttpResponseNoContent()
 
     def _allowed_methods(self):
         allowed = ['OPTIONS']
@@ -250,7 +314,7 @@ class WebDavView(View):
             if not res.isdir():
                 return HttpResponseNotFound()
             return allowed + ['PUT', 'MKCOL']
-        allowed += ['HEAD', 'GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', ] # 'LOCK', 'UNLOCK'
+        allowed += ['HEAD', 'GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK']
         if self.resource.isfile():
             allowed += ['PUT']
         return allowed
@@ -266,30 +330,43 @@ class WebDavView(View):
             response['Allow-Ranges'] = 'bytes'
         return response
 
-    def propfind(self, request, path, *args, **kwargs):
+    def propfind(self, request, path, xbody, *args, **kwargs):
         if not self.resource.exists():
             return HttpResponseNotFound()
         acl = self.get_access(self.path)
         if not acl.listing:
             return HttpResponseForbidden()
-        depth = self.get_depth()
-        names_only, props = False, []
-        length = self.request.META.get('CONTENT_LENGTH', 0)
-        if not length or int(length) != 0:
-            #Otherwise, empty prop list is treated as request for ALL props.
-            for ev, el in ElementTree.iterparse(self.request):
-                if el.tag == '{DAV:}allprop':
-                    if props:
-                        return HttpResponseBadRequest()
-                elif el.tag == '{DAV:}propname':
-                    names_only = True
-                elif el.tag == '{DAV:}prop':
-                    if names_only:
-                        return HttpResponseBadRequest()
-                    for pr in el:
-                        props.append(pr.tag)
-        msr = ElementTree.Element('{DAV:}multistatus')
-        for child in self.resource.get_descendants(depth=depth, include_self=True):
+
+        if xbody:
+            prop = xbody('propfind/prop/*')
+            allprop = xbody('propfind/allprop')
+            propname = xbody('propfind/propname')
+
+            if int(bool(prop)) + int(bool(allprop)) + int(bool(propname)) != 1:
+                return HttpResponseBadRequest()
+
+            if prop:
+                props = []
+
+            # propname
+            D.multistatus(
+                D.response(
+                    D.href(url_join(self.base_url, self.resource.get_path())),
+                    D.propstat(
+                        D.prop(
+                            D.creationdate(),
+                            D.displayname(),
+                            D.getcontentlength(),
+                            D.getlastmodified(),
+                            D.resourcetype(D.collection()),
+                        ),
+                        D.status(text='HTTP/1.1 200 OK'),
+                    ),
+                ),
+            )
+
+
+        for child in self.resource.get_descendants(depth=self.get_depth(), include_self=True):
             response = ElementTree.SubElement(msr, '{DAV:}response')
             ElementTree.SubElement(response, '{DAV:}href').text = url_join(self.base_url, child.get_path())
             self.props.get_propstat(child, response, *props)

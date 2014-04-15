@@ -25,7 +25,7 @@ try:
     from email.utils import parsedate_tz
 except ImportError:
     from email.Utils import parsedate_tz
-
+import lxml.builder as lb
 
 # Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
 FORMAT_RFC_822 = '%a, %d %b %Y %H:%M:%S GMT'
@@ -34,6 +34,11 @@ FORMAT_RFC_850 = '%A %d-%b-%y %H:%M:%S GMT'
 # Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
 FORMAT_ASC = '%a %b %d %H:%M:%S %Y'
 
+WEBDAV_NS = "DAV:"
+
+WEBDAV_NSMAP = {'D': WEBDAV_NS}
+
+D = lb.ElementMaker(namespace=WEBDAV_NS, nsmap=WEBDAV_NSMAP)
 
 def safe_join(root, *paths):
     """The provided os.path.join() does not work as desired. Any path starting with /
