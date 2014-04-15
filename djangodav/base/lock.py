@@ -21,23 +21,18 @@
 
 
 class BaseLock(object):
-    def __init__(self, resource, locktype, scope, depth, owner, timeout):
+    def __init__(self, resource):
         self.resource = resource
-        self.type = locktype
-        self.scope = scope
-        self.depth = depth
-        self.owner = owner
-        self.timeout = timeout
 
     def get(self):
         """Gets all active locks for the requested resource. Returns a list of locks."""
         raise NotImplementedError()
 
-    def acquire(self, blocking=True):
+    def acquire(self, lockscope, locktype, depth, timeout, owner):
         """Creates a new lock for the given resource."""
         raise NotImplementedError()
 
-    def release(self):
+    def release(self, token):
         """Releases the lock referenced by the given lock id."""
         raise NotImplementedError()
 
