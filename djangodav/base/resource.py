@@ -20,7 +20,7 @@
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from djangodav.utils import url_join
+from django.utils.http import urlquote
 
 
 class BaseDavResource(object):
@@ -31,7 +31,8 @@ class BaseDavResource(object):
             self.path = path.split("/")
 
     def get_path(self):
-        return "/".join(self.path) + ("/" * (self.isdir()))
+        path = [urlquote(p) for p in self.path]
+        return "/".join(path) + ("/" * (self.isdir()))
 
     def get_name(self):
         if not self.path:
