@@ -69,3 +69,7 @@ class HttpResponseNoContent(HttpResponse):
 
 class HttpResponseConflict(HttpResponse):
     status_code = httplib.CONFLICT
+
+
+class HttpResponseLocked(HttpResponse):
+    status_code = httplib.LOCKED
