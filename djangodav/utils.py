@@ -41,12 +41,25 @@ WEBDAV_NSMAP = {'D': WEBDAV_NS}
 D = lb.ElementMaker(namespace=WEBDAV_NS, nsmap=WEBDAV_NSMAP)
 
 
-def get_property(res, name):
+def get_property_tag_list(res, *names):
+    props = []
+    for name in names:
+        tag = get_property_tag(res, name)
+        if tag is None:
+            continue
+        props.append(tag)
+    return props
+
+
+def get_property_tag(res, name):
     if name == 'resourcetype':
         if res.isfile():
             return D(name)
         return D(name, D.collection)
-    return D(name, text=unicode(getattr(res, name)))
+    try:
+        return D(name, unicode(getattr(res, name)))
+    except AttributeError:
+        return
 
 
 def safe_join(root, *paths):

@@ -15,7 +15,7 @@ from djangodav.response import ResponseException, HttpResponsePreconditionFailed
     HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, HttpResponseNotImplemented, \
     HttpResponseMultiStatus, HttpResponseLocked
 from djangodav.base.property import DavProperty
-from djangodav.utils import WEBDAV_NSMAP, D, url_join, get_property
+from djangodav.utils import WEBDAV_NSMAP, D, url_join, get_property_tag_list
 
 PATTERN_IF_DELIMITER = re.compile(r'(<([^>]+)>)|(\(([^\)]+)\))')
 
@@ -35,7 +35,7 @@ class WebDavView(View):
         self.base_url = request.META['PATH_INFO'][:-len(self.path)]
 
         meta = request.META.get
-        if meta('Content-Type', '').startswith('text/xml') and int(meta('Content-Length', 0)) > 0:
+        if meta('CONTENT_TYPE', '').startswith('text/xml') and int(meta('CONTENT_LENGTH', 0)) > 0:
             kwargs['xbody'] = etree.XPathDocumentEvaluator(
                 etree.parse(request, etree.XMLParser(ns_clean=True)),
                 namespaces=WEBDAV_NSMAP
@@ -270,6 +270,9 @@ class WebDavView(View):
     def lock(self, request, path, xbody=None, *args, **kwargs):
         # TODO Lock refreshing
 
+        if not xbody:
+            return HttpResponseBadRequest('Lockinfo required')
+
         try:
             depth = int(request.META.get('Depth', '0'))
         except ValueError:
@@ -299,7 +302,7 @@ class WebDavView(View):
             lockscope = lockscope_obj.xpath('local-name()')
 
         try:
-            locktype_obj = xbody('/D:lockinfo/D:lockstype/*')[0] # TODO: WEBDAV_NS
+            locktype_obj = xbody('/D:lockinfo/D:locktype/*')[0] # TODO: WEBDAV_NS
         except IndexError:
             return HttpResponseBadRequest('Lock type required')
         else:
@@ -334,15 +337,15 @@ class WebDavView(View):
     def propfind(self, request, path, xbody=None, *args, **kwargs):
         if not self.resource.exists():
             return HttpResponseNotFound()
-        acl = self.get_access(self.path)
-        if not acl.listing:
+
+        if not self.get_access(self.path):
             return HttpResponseForbidden()
 
         get_all_props, get_prop, get_prop_names = True, False, False
         if xbody:
-            get_prop = [p.xpath('local-name()') for p in xbody('propfind/prop/*')]
-            get_all_props = xbody('propfind/allprop')
-            get_prop_names = xbody('propfind/propname')
+            get_prop = [p.xpath('local-name()') for p in xbody('/D:propfind/D:prop/*')]
+            get_all_props = xbody('/D:propfind/D:allprop')
+            get_prop_names = xbody('/D:propfind/D:propname')
             if int(bool(get_prop)) + int(bool(get_all_props)) + int(bool(get_prop_names)) != 1:
                 return HttpResponseBadRequest()
 
@@ -366,12 +369,9 @@ class WebDavView(View):
                 D.response(
                     D.href(url_join(self.base_url, child.get_path())),
                     D.propstat(
-                        D.prop(*[
-                            get_property(child, name)
-                            for name in
-                                (get_prop_names if get_prop_names else child.ALL_PROPS)
-                            if get_property(child, name)
-                        ]),
+                        D.prop(
+                            *get_property_tag_list(child, *(get_prop if get_prop else child.ALL_PROPS))
+                        ),
                         D.status(text='HTTP/1.1 200 OK'),
                     ),
                 )
