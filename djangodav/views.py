@@ -317,7 +317,7 @@ class WebDavView(View):
                 D.activelock(*([
                     D.locktype(locktype_obj),
                     D.lockscope(lockscope_obj),
-                    D.depth(depth),
+                    D.depth(unicode(depth)),
                     D.timeout("Second-%s" % timeout),
                     D.locktoken(D.href('opaquelocktoken:%s' % token))]
                     + ([owner_obj] if owner_obj else [])
