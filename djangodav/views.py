@@ -274,12 +274,12 @@ class WebDavView(View):
             return HttpResponseBadRequest('Lockinfo required')
 
         try:
-            depth = int(request.META.get('Depth', '0'))
+            depth = int(request.META.get('HTTP_DEPTH', '0'))
         except ValueError:
             return HttpResponseBadRequest('Wrong depth')
 
         try:
-            timeout = int(request.META.get('Depth', 'Seconds-600')[len('Seconds-'):])
+            timeout = int(request.META.get('HTTP_LOCK_TIMEOUT', 'Seconds-600')[len('Seconds-'):])
         except ValueError:
             return HttpResponseBadRequest('Wrong timeout')
 
@@ -312,22 +312,19 @@ class WebDavView(View):
         if not token:
             return HttpResponseLocked('Already locked')
 
-        return HttpResponse(
-            D.prop(
-                D.activelock(*([
-                    D.locktype(locktype_obj),
-                    D.lockscope(lockscope_obj),
-                    D.depth(unicode(depth)),
-                    D.timeout("Second-%s" % timeout),
-                    D.locktoken(D.href('opaquelocktoken:%s' % token))]
-                    + ([owner_obj] if owner_obj else [])
-                ))
-            ),
-            mimetype='application/xml'
-        )
+        body = D.activelock(*([
+            D.locktype(locktype_obj),
+            D.lockscope(lockscope_obj),
+            D.depth(unicode(depth)),
+            D.timeout("Second-%s" % timeout),
+            D.locktoken(D.href('opaquelocktoken:%s' % token))]
+            + ([owner_obj] if not owner_obj is None else [])
+        ))
+
+        return HttpResponse(etree.tostring(body, pretty_print=True), content_type='application/xml')
 
     def unlock(self, request, path, xbody=None, *args, **kwargss):
-        token = request.META.get('Lock-Token')
+        token = request.META.get('HTTP_LOCK_TOKEN')
         if not token:
             return HttpResponseBadRequest('Lock token required')
         if not self.lock_class(self.resource).release(token):
