@@ -128,7 +128,7 @@ class WebDavView(View):
         if not head and self.resource.isdir():
             if not acl.listing:
                 return HttpResponseForbidden()
-            return render_to_response(self.template_name, {'res': self.resource})
+            return render_to_response(self.template_name, {'res': self.resource, 'base_url': self.base_url})
         else:
             if not acl.read:
                 return HttpResponseForbidden()
@@ -140,9 +140,9 @@ class WebDavView(View):
                 response = HttpResponse(self.resource.read())
             if self.resource.exists():
                 response['Content-Type'] = mimetypes.guess_type(self.resource.displayname)[0]
-                response['Content-Length'] = self.resource.get_size()
-                response['Last-Modified'] = http_date(self.resource.get_mtime_stamp())
-                response['ETag'] = self.resource.get_etag()
+                response['Content-Length'] = self.resource.getcontentlength
+                response['Last-Modified'] = self.resource.getlastmodified
+                response['ETag'] = self.resource.getetag
             response['Date'] = http_date()
         return response
 

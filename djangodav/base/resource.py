@@ -39,10 +39,10 @@ class BaseDavResource(object):
 
     def get_path(self):
         path = [urlquote(p) for p in self.path]
-        return "/".join(path) + ("/" * (self.isdir()))
+        return ("/" if path else "") + "/".join(path) + ("/" * (self.isdir()))
 
     def get_displaypath(self):
-        return "/".join(self.path) + ("/" * (self.isdir()))
+        return ("/" if self.path else "") + "/".join(self.path) + ("/" * (self.isdir()))
 
     @property
     def displayname(self):

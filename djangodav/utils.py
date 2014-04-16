@@ -66,7 +66,7 @@ def safe_join(root, *paths):
 def url_join(base, *paths):
     """Assuming base is the scheme and host (and perhaps path) we will join the remaining
     path elements to it."""
-    paths = safe_join(*paths)
+    paths = safe_join(*paths) if paths else ""
     while base.endswith('/'):
         base = base[:-1]
     return base + paths
