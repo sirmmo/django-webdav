@@ -78,7 +78,7 @@ class DavProperty(object):
                     else:
                         value = ''
                 elif bare_name == 'displayname':
-                    value = res.get_name()
+                    value = res.displayname
                 elif bare_name == 'href':
                     value = res.get_url()
             return value

@@ -47,8 +47,8 @@ class TestBaseDavResource(TestCase):
     def test_get_dirname(self):
         self.assertEqual(self.resource.get_dirname(), '/path/to/')
 
-    def test_get_name(self):
-        self.assertEqual(self.resource.get_name(), 'name')
+    def test_displayname(self):
+        self.assertEqual(self.resource.displayname, 'name')
 
 
 class TestFSDavResource(TestCase):

@@ -27,6 +27,7 @@ import urllib
 
 from django.http import HttpResponse
 from django.utils.http import http_date
+from django.utils.feedgenerator import rfc3339_date
 
 from djangodav.base.resource import BaseDavResource
 from djangodav.response import ResponseException
@@ -46,6 +47,42 @@ class BaseFSDavResource(BaseDavResource):
         be used."""
         return os.path.join(self.root, *self.path)
 
+    @property
+    def getcontentlength(self):
+        """Return the size of the resource in bytes."""
+        return os.path.getsize(self.get_abs_path())
+
+    @property
+    def creationdate(self):
+        """Return the create time as rfc3339_date."""
+        return rfc3339_date(self.get_ctime())
+
+    @property
+    def getlastmodified(self):
+        """Return the modified time as http_date."""
+        return http_date(os.stat(self.get_abs_path()).st_ctime)
+
+    def get_ctime(self):
+        """Return the create time as datetime object."""
+        return datetime.datetime.fromtimestamp(os.stat(self.get_abs_path()).st_ctime)
+
+    def get_mtime(self):
+        """Return the modified time as datetime object."""
+        return datetime.datetime.fromtimestamp(os.stat(self.get_abs_path()).st_mtime)
+
+    @property
+    def getetag(self):
+        """Calculate an etag for this resource. The default implementation uses an md5 sub of the
+        absolute path modified time and size. Can be overridden if resources are not stored in a
+        file system. The etag is used to detect changes to a resource between HTTP calls. So this
+        needs to change if a resource is modified."""
+        hashsum = hashlib.md5()
+        hashsum.update(self.get_abs_path().encode('utf-8'))
+        hashsum.update(str(self.get_mtime()))
+        hashsum.update(str(self.get_ctime()))
+        hashsum.update(str(self.getcontentlength))
+        return hashsum.hexdigest()
+
     def isdir(self):
         """Return True if this resource is a directory (collection in WebDAV parlance)."""
         return os.path.isdir(self.get_abs_path())
@@ -57,26 +94,6 @@ class BaseFSDavResource(BaseDavResource):
     def exists(self):
         """Return True if this resource exists."""
         return os.path.exists(self.get_abs_path())
-
-    def get_size(self):
-        """Return the size of the resource in bytes."""
-        return os.path.getsize(self.get_abs_path())
-
-    def get_ctime_stamp(self):
-        """Return the create time as UNIX timestamp."""
-        return os.stat(self.get_abs_path()).st_ctime
-
-    def get_ctime(self):
-        """Return the create time as datetime object."""
-        return datetime.datetime.fromtimestamp(self.get_ctime_stamp())
-
-    def get_mtime_stamp(self):
-        """Return the modified time as UNIX timestamp."""
-        return os.stat(self.get_abs_path()).st_mtime
-
-    def get_mtime(self):
-        """Return the modified time as datetime object."""
-        return datetime.datetime.fromtimestamp(self.get_mtime_stamp())
 
     def get_children(self):
         """Return an iterator of all direct children of this resource."""
@@ -117,7 +134,7 @@ class BaseFSDavResource(BaseDavResource):
             # in case of infinity.
             if depth != 0:
                 for child in self.get_children():
-                    child.copy(self.__class__(safe_join(destination.path, child.get_name())),
+                    child.copy(self.__class__(safe_join(destination.path, child.displayname)),
                                depth=depth-1)
         else:
             if destination.isdir():
@@ -133,22 +150,10 @@ class BaseFSDavResource(BaseDavResource):
         if self.isdir():
             destination.mkdir()
             for child in self.get_children():
-                child.move(self.__class__(safe_join(destination.path, child.get_name())))
+                child.move(self.__class__(safe_join(destination.path, child.displayname)))
             self.delete()
         else:
             os.rename(self.get_abs_path(), destination.get_abs_path())
-
-    def get_etag(self):
-        """Calculate an etag for this resource. The default implementation uses an md5 sub of the
-        absolute path modified time and size. Can be overridden if resources are not stored in a
-        file system. The etag is used to detect changes to a resource between HTTP calls. So this
-        needs to change if a resource is modified."""
-        hashsum = hashlib.md5()
-        hashsum.update(self.get_abs_path().encode('utf-8'))
-        hashsum.update(str(self.get_mtime_stamp()))
-        hashsum.update(str(self.get_size()))
-        return hashsum.hexdigest()
-
 
 class DummyReadFSDavResource(BaseFSDavResource):
     def read(self):
@@ -178,10 +183,10 @@ class SendFileFSDavResource(BaseFSDavResource):
         if self.quote:
             full_path = urllib.quote(full_path)
         response['X-SendFile'] = full_path
-        response['Content-Type'] = mimetypes.guess_type(self.get_name())
-        response['Content-Length'] = self.get_size()
-        response['Last-Modified'] = http_date(self.get_mtime_stamp())
-        response['ETag'] = self.get_etag()
+        response['Content-Type'] = mimetypes.guess_type(self.displayname)
+        response['Content-Length'] = self.getcontentlength
+        response['Last-Modified'] = http_date(self.getlastmodified)
+        response['ETag'] = self.getetag
         raise ResponseException(response)
 
 
@@ -192,8 +197,8 @@ class RedirectFSDavResource(BaseFSDavResource):
         response = HttpResponse()
         response['X-Accel-Redirect'] = url_join(self.prefix, self.get_path().path.encode('utf-8'))
         response['X-Accel-Charset'] = 'utf-8'
-        response['Content-Type'] = mimetypes.guess_type(self.get_name())
-        response['Content-Length'] = self.get_size()
-        response['Last-Modified'] = http_date(self.get_mtime_stamp())
-        response['ETag'] = self.get_etag()
+        response['Content-Type'] = mimetypes.guess_type(self.displayname)
+        response['Content-Length'] = self.getcontentlength
+        response['Last-Modified'] = http_date(self.getlastmodified)
+        response['ETag'] = self.getetag
         raise ResponseException(response)

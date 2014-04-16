@@ -24,6 +24,13 @@ from django.utils.http import urlquote
 
 
 class BaseDavResource(object):
+    ALL_PROPS = ['getcontentlength', 'creationdate', 'getlastmodified', 'resourcetype', 'displayname']
+
+    LIVE_PROPERTIES = [
+        '{DAV:}getetag', '{DAV:}getcontentlength', '{DAV:}creationdate',
+        '{DAV:}getlastmodified', '{DAV:}resourcetype', '{DAV:}displayname'
+    ]
+
     def __init__(self, path):
         self.path = []
         path = path.strip("/")
@@ -34,7 +41,11 @@ class BaseDavResource(object):
         path = [urlquote(p) for p in self.path]
         return "/".join(path) + ("/" * (self.isdir()))
 
-    def get_name(self):
+    def get_displaypath(self):
+        return "/".join(self.path) + ("/" * (self.isdir()))
+
+    @property
+    def displayname(self):
         if not self.path:
             return None
         return self.path[-1]
@@ -58,6 +69,22 @@ class BaseDavResource(object):
                 for desc in child.get_descendants(depth=depth-1, include_self=True):
                     yield desc
 
+    @property
+    def getcontentlength(self):
+        raise NotImplementedError()
+
+    @property
+    def creationdate(self):
+        raise NotImplementedError()
+
+    @property
+    def getlastmodified(self):
+        raise NotImplementedError()
+
+    @property
+    def getetag(self):
+        raise NotImplementedError()
+
     def copy(self,  destination, depth=0):
         raise NotImplementedError()
 
@@ -79,16 +106,7 @@ class BaseDavResource(object):
     def exists(self):
         raise NotImplementedError()
 
-    def get_size(self):
-        raise NotImplementedError()
-
-    def get_ctime_stamp(self):
-        raise NotImplementedError()
-
     def get_ctime(self):
-        raise NotImplementedError()
-
-    def get_mtime_stamp(self):
         raise NotImplementedError()
 
     def get_mtime(self):
@@ -101,7 +119,4 @@ class BaseDavResource(object):
         raise NotImplementedError()
 
     def mkdir(self):
-        raise NotImplementedError()
-
-    def get_etag(self):
         raise NotImplementedError()

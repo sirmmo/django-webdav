@@ -24,7 +24,7 @@
 <head></head>
 
 <body>
-<h1>Index of {{ res.get_path }}</h1>
+<h1>Index of {{ res.get_displaypath }}</h1>
 <table>
 <tr>
     <th>Name</th>
@@ -41,7 +41,7 @@
 </tr>
 {% for child in res.get_children %}
 <tr>
-    <td><a href="{{ child.get_path }}">{{ child.get_name }}</a></td>
+    <td><a href="{{ child.get_path }}">{{ child.displayname }}</a></td>
     <td align="right">{{ child.get_mtime|date:"d-M-Y H:i" }}</td>
     <td align="right">{{ child.get_size|filesizeformat }}</td>
     <td></td>

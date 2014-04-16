@@ -40,6 +40,15 @@ WEBDAV_NSMAP = {'D': WEBDAV_NS}
 
 D = lb.ElementMaker(namespace=WEBDAV_NS, nsmap=WEBDAV_NSMAP)
 
+
+def get_property(res, name):
+    if name == 'resourcetype':
+        if res.isfile():
+            return D(name)
+        return D(name, D.collection)
+    return D(name, text=str(getattr(res, name)))
+
+
 def safe_join(root, *paths):
     """The provided os.path.join() does not work as desired. Any path starting with /
     will simply be returned rather than actually being joined with the other elements."""

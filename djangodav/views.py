@@ -1,5 +1,5 @@
 import mimetypes, urllib, urlparse, re
-from xml import etree
+from lxml import etree
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseNotAllowed, HttpResponseBadRequest, \
     HttpResponseNotModified
@@ -15,7 +15,7 @@ from djangodav.response import ResponseException, HttpResponsePreconditionFailed
     HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, HttpResponseNotImplemented, \
     HttpResponseMultiStatus, HttpResponseLocked
 from djangodav.base.property import DavProperty
-from djangodav.utils import WEBDAV_NS, WEBDAV_NSMAP, D, url_join
+from djangodav.utils import WEBDAV_NSMAP, D, url_join, get_property
 
 PATTERN_IF_DELIMITER = re.compile(r'(<([^>]+)>)|(\(([^\)]+)\))')
 
@@ -100,10 +100,10 @@ class WebDavView(View):
         self.path = path
         self.props = self.property_class(self)
         self.locks = self.lock_class(self)
-        self.base_url = request.META['PATH_INFO'][:-len(path)]
+        self.base_url = request.META['PATH_INFO'][:-len(self.path)]
 
         meta = request.META.get
-        if meta('Content-Type', '').starts_with('text/xml') and int(meta('Content-Length', 0)) > 0:
+        if meta('Content-Type', '').startswith('text/xml') and int(meta('Content-Length', 0)) > 0:
             kwargs['xbody'] = etree.XPathDocumentEvaluator(
                 etree.parse(request, etree.XMLParser(ns_clean=True)),
                 namespaces=WEBDAV_NSMAP
@@ -114,7 +114,7 @@ class WebDavView(View):
         else:
             handler = self.http_method_not_allowed
         try:
-            resp = handler(request, path, *args, **kwargs)
+            resp = handler(request, self.path, *args, **kwargs)
         except ResponseException, e:
             resp = e.response
         if not 'Allow' in resp:
@@ -139,7 +139,7 @@ class WebDavView(View):
             else:
                 response = HttpResponse(self.resource.read())
             if self.resource.exists():
-                response['Content-Type'] = mimetypes.guess_type(self.resource.get_name())[0]
+                response['Content-Type'] = mimetypes.guess_type(self.resource.displayname)[0]
                 response['Content-Length'] = self.resource.get_size()
                 response['Last-Modified'] = http_date(self.resource.get_mtime_stamp())
                 response['ETag'] = self.resource.get_etag()
@@ -330,47 +330,55 @@ class WebDavView(View):
             response['Allow-Ranges'] = 'bytes'
         return response
 
-    def propfind(self, request, path, xbody, *args, **kwargs):
+    def propfind(self, request, path, xbody=None, *args, **kwargs):
         if not self.resource.exists():
             return HttpResponseNotFound()
         acl = self.get_access(self.path)
         if not acl.listing:
             return HttpResponseForbidden()
 
+        get_all_props, get_prop, get_prop_names = True, False, False
         if xbody:
-            prop = xbody('propfind/prop/*')
-            allprop = xbody('propfind/allprop')
-            propname = xbody('propfind/propname')
-
-            if int(bool(prop)) + int(bool(allprop)) + int(bool(propname)) != 1:
+            get_prop = [p.xpath('local-name()') for p in xbody('propfind/prop/*')]
+            get_all_props = xbody('propfind/allprop')
+            get_prop_names = xbody('propfind/propname')
+            if int(bool(get_prop)) + int(bool(get_all_props)) + int(bool(get_prop_names)) != 1:
                 return HttpResponseBadRequest()
 
-            if prop:
-                props = []
+        children = self.resource.get_descendants(depth=self.get_depth(), include_self=True)
 
-            # propname
-            D.multistatus(
+        if get_prop_names:
+            responses = [
                 D.response(
-                    D.href(url_join(self.base_url, self.resource.get_path())),
+                    D.href(url_join(self.base_url, child.get_path())),
                     D.propstat(
-                        D.prop(
-                            D.creationdate(),
-                            D.displayname(),
-                            D.getcontentlength(),
-                            D.getlastmodified(),
-                            D.resourcetype(D.collection()),
-                        ),
+                        D.prop(*[
+                            D(name) for name in get_prop_names if child.ALL_PROPS
+                        ]),
                         D.status(text='HTTP/1.1 200 OK'),
                     ),
-                ),
-            )
+                )
+                for child in children
+            ]
+        else:
+            responses = [
+                D.response(
+                    D.href(url_join(self.base_url, child.get_path())),
+                    D.propstat(
+                        D.prop(*[
+                            get_property(child, name)
+                            for name in
+                                (get_prop_names if get_prop_names else child.ALL_PROPS)
+                            if get_property(child, name)
+                        ]),
+                        D.status(text='HTTP/1.1 200 OK'),
+                    ),
+                )
+                for child in children
+            ]
 
-
-        for child in self.resource.get_descendants(depth=self.get_depth(), include_self=True):
-            response = ElementTree.SubElement(msr, '{DAV:}response')
-            ElementTree.SubElement(response, '{DAV:}href').text = url_join(self.base_url, child.get_path())
-            self.props.get_propstat(child, response, *props)
-        response = HttpResponseMultiStatus(ElementTree.tostring(msr, 'UTF-8'), mimetype='application/xml')
+        body = D.multistatus(*responses)
+        response = HttpResponseMultiStatus(etree.tostring(body, pretty_print=True))
         response['Date'] = http_date()
         return response
 
