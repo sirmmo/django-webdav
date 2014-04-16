@@ -20,6 +20,7 @@
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 import hashlib
 import mimetypes
+from sys import getfilesystemencoding
 import os
 import datetime
 import shutil
@@ -32,6 +33,9 @@ from django.utils.feedgenerator import rfc3339_date
 from djangodav.base.resource import BaseDavResource
 from djangodav.response import ResponseException
 from djangodav.utils import safe_join, url_join
+
+
+fs_encoding = getfilesystemencoding()
 
 
 class BaseFSDavResource(BaseDavResource):
@@ -98,7 +102,9 @@ class BaseFSDavResource(BaseDavResource):
     def get_children(self):
         """Return an iterator of all direct children of this resource."""
         for child in os.listdir(self.get_abs_path()):
-            yield self.__class__(url_join(*(self.path + [child.decode('utf8')])))
+            if not isinstance(child, unicode):
+                child = child.decode(fs_encoding)
+            yield self.__class__(url_join(*(self.path + [child])))
 
     def write(self, content):
         raise NotImplemented
