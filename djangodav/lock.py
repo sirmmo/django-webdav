@@ -28,7 +28,7 @@ class DummyLock(BaseLock):
         pass
 
     def acquire(self, *args, **kwargs):
-        return unicode(uuid4)
+        return unicode(uuid4())
 
     def release(self, token):
         return True
