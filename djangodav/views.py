@@ -51,7 +51,6 @@ class WebDavView(View):
             resp = e.response
         if not 'Allow' in resp:
             resp['Allow'] = ", ".join(self._allowed_methods())
-        print resp
         return resp
 
     def options(self, request, path, *args, **kwargs):
