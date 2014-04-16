@@ -28,6 +28,56 @@ class WebDavView(View):
     template_name = 'djangodav/index.html'
     http_method_names = ['options', 'put', 'mkcol', 'head', 'get', 'delete', 'propfind', 'proppatch', 'copy', 'move', 'lock', 'unlock']
 
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, path, *args, **kwargs):
+        self.path = path
+        self.props = self.property_class(self)
+        self.base_url = request.META['PATH_INFO'][:-len(self.path)]
+
+        meta = request.META.get
+        if meta('Content-Type', '').startswith('text/xml') and int(meta('Content-Length', 0)) > 0:
+            kwargs['xbody'] = etree.XPathDocumentEvaluator(
+                etree.parse(request, etree.XMLParser(ns_clean=True)),
+                namespaces=WEBDAV_NSMAP
+            )
+
+        if request.method.lower() in self.http_method_names:
+            handler = getattr(self, request.method.lower(), self.http_method_not_allowed)
+        else:
+            handler = self.http_method_not_allowed
+        try:
+            resp = handler(request, self.path, *args, **kwargs)
+        except ResponseException, e:
+            resp = e.response
+        if not 'Allow' in resp:
+            resp['Allow'] = ", ".join(self._allowed_methods())
+        print resp
+        return resp
+
+    def options(self, request, path, *args, **kwargs):
+        response = HttpResponse(content_type='text/html')
+        response['DAV'] = '1,2'
+        response['Date'] = http_date()
+        response['Content-Length'] = '0'
+        if self.path in ('/', '*'):
+            return response
+        response['Allow'] = ", ".join(self._allowed_methods())
+        if self.resource.exists() and self.resource.isfile():
+            response['Allow-Ranges'] = 'bytes'
+        return response
+
+    def _allowed_methods(self):
+        allowed = ['OPTIONS']
+        if not self.resource.exists():
+            res = self.resource.get_parent()
+            if not res.isdir():
+                return HttpResponseNotFound()
+            return allowed + ['PUT', 'MKCOL']
+        allowed += ['HEAD', 'GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK']
+        if self.resource.isfile():
+            allowed += ['PUT']
+        return allowed
+
     def get_access(self, path):
         """Return permission as DavAcl object. A DavACL should have the following attributes:
         read, write, delete, create, relocate, list. By default we implement a read-only
@@ -95,32 +145,6 @@ class WebDavView(View):
                 cond_if = '<*>' + cond_if
             #for (tmpurl, url, tmpcontent, content) in PATTERN_IF_DELIMITER.findall(cond_if):
 
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, path, *args, **kwargs):
-        self.path = path
-        self.props = self.property_class(self)
-        self.locks = self.lock_class(self)
-        self.base_url = request.META['PATH_INFO'][:-len(self.path)]
-
-        meta = request.META.get
-        if meta('Content-Type', '').startswith('text/xml') and int(meta('Content-Length', 0)) > 0:
-            kwargs['xbody'] = etree.XPathDocumentEvaluator(
-                etree.parse(request, etree.XMLParser(ns_clean=True)),
-                namespaces=WEBDAV_NSMAP
-            )
-
-        if request.method.lower() in self.http_method_names:
-            handler = getattr(self, request.method.lower(), self.http_method_not_allowed)
-        else:
-            handler = self.http_method_not_allowed
-        try:
-            resp = handler(request, self.path, *args, **kwargs)
-        except ResponseException, e:
-            resp = e.response
-        if not 'Allow' in resp:
-            resp['Allow'] = ", ".join(self._allowed_methods())
-        return resp
-
     def get(self, request, path, head=False, *args, **kwargs):
         acl = self.get_access(self.path)
         if not self.resource.exists():
@@ -170,7 +194,7 @@ class WebDavView(View):
         acl = self.get_access(self.path)
         if not acl.delete:
             return HttpResponseForbidden()
-        self.locks.del_locks(self.resource)
+        self.lock_class(self.resource).del_locks()
         self.props.del_props(self.resource)
         self.resource.delete()
         response = HttpResponseNoContent()
@@ -223,7 +247,8 @@ class WebDavView(View):
         dst_exists = dst.exists()
         if move:
             if dst_exists:
-                self.locks.del_locks(dst)
+                self.lock_class(self.resource).del_locks()
+                self.lock_class(dst).del_locks()
                 self.props.del_props(dst)
                 dst.delete()
             errors = self.resource.move(dst)
@@ -231,7 +256,7 @@ class WebDavView(View):
             errors = self.resource.copy(dst, depth=depth)
         self.props.copy_props(self.resource, dst, move=move)
         if move:
-            self.locks.del_locks(self.resource)
+            self.lock_class(self.resource).del_locks()
         if errors:
             response = HttpResponseMultiStatus()
         elif dst_exists:
@@ -243,7 +268,7 @@ class WebDavView(View):
     def move(self, request, path, *args, **kwargs):
         return self.copy(request, path, move=True, *args, **kwargs)
 
-    def lock(self, request, path, xbody, *args, **kwargs):
+    def lock(self, request, path, xbody=None, *args, **kwargs):
         # TODO Lock refreshing
 
         try:
@@ -299,36 +324,13 @@ class WebDavView(View):
             mimetype='application/xml'
         )
 
-    def unlock(self, request, path, *args, **kwargss):
+    def unlock(self, request, path, xbody=None, *args, **kwargss):
         token = request.META.get('Lock-Token')
         if not token:
             return HttpResponseBadRequest('Lock token required')
         if not self.lock_class(self.resource).release(token):
             return HttpResponseForbidden()
         return HttpResponseNoContent()
-
-    def _allowed_methods(self):
-        allowed = ['OPTIONS']
-        if not self.resource.exists():
-            res = self.resource.get_parent()
-            if not res.isdir():
-                return HttpResponseNotFound()
-            return allowed + ['PUT', 'MKCOL']
-        allowed += ['HEAD', 'GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK']
-        if self.resource.isfile():
-            allowed += ['PUT']
-        return allowed
-
-    def options(self, request, path, *args, **kwargs):
-        response = HttpResponse(mimetype='text/html')
-        response['DAV'] = '1,2'
-        response['Date'] = http_date()
-        if self.path in ('/', '*'):
-            return response
-        response['Allow'] = ", ".join(self._allowed_methods())
-        if self.resource.exists() and self.resource.isfile():
-            response['Allow-Ranges'] = 'bytes'
-        return response
 
     def propfind(self, request, path, xbody=None, *args, **kwargs):
         if not self.resource.exists():

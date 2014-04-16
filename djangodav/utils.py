@@ -46,7 +46,7 @@ def get_property(res, name):
         if res.isfile():
             return D(name)
         return D(name, D.collection)
-    return D(name, text=str(getattr(res, name)))
+    return D(name, text=unicode(getattr(res, name)))
 
 
 def safe_join(root, *paths):
