@@ -31,11 +31,11 @@ class TestBaseDavResource(TestCase):
     def test_path(self):
         self.assertEqual(self.resource.path, ['path', 'to', 'name'])
 
-    @patch('djangodav.base.resource.BaseDavResource.is_collection', Mock(return_value=True))
+    @patch('djangodav.base.resource.BaseDavResource.is_collection', True)
     def test_get_path_collection(self):
         self.assertEqual(self.resource.get_path(), '/path/to/name/')
 
-    @patch('djangodav.base.resource.BaseDavResource.is_collection', Mock(return_value=False))
+    @patch('djangodav.base.resource.BaseDavResource.is_collection', False)
     def test_get_path_object(self):
         self.assertEqual(self.resource.get_path(), '/path/to/name')
 

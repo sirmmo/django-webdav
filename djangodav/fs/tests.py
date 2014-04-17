@@ -46,7 +46,7 @@ class TestFSDavResource(TestCase):
     @patch('djangodav.fs.resource.os.path.exists')
     def test_isfile(self, exists):
         exists.return_value = True
-        self.assertTrue(self.resource.exists())
+        self.assertTrue(self.resource.exists)
         exists.assert_called_with('/some/folder/path/to/name')
 
     @patch('djangodav.fs.resource.os.path.getsize')
