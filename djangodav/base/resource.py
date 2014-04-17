@@ -42,7 +42,7 @@ class BaseDavResource(object):
         return ("/" if path else "") + "/".join(path) + ("/" * self.is_collection)
 
     def get_displaypath(self):
-        return ("/" if self.path else "") + "/".join(self.path) + ("/" * (self.is_collection()))
+        return ("/" if self.path else "") + "/".join(self.path) + ("/" * (self.is_collection))
 
     @property
     def displayname(self):
