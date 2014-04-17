@@ -181,6 +181,7 @@ class WebDavView(View):
         created = not self.resource.exists
         self.resource.write(self.request.body)
         if created:
+            self.__dict__['resource'] = self.resource_class(self.resource.get_path())
             return HttpResponseCreated()
         else:
             return HttpResponseNoContent()
@@ -195,6 +196,7 @@ class WebDavView(View):
         self.resource.delete()
         response = HttpResponseNoContent()
         response['Date'] = http_date()
+        self.__dict__['resource'] = self.resource_class(self.resource.get_path())
         return response
 
     def mkcol(self, request, path, *args, **kwargs):
@@ -209,6 +211,7 @@ class WebDavView(View):
         if not acl.create:
             return HttpResponseForbidden()
         self.resource.create_collection()
+        self.__dict__['resource'] = self.resource_class(self.resource.get_path())
         return HttpResponseCreated()
 
     def copy(self, request, path, move=False, *args, **kwargs):
