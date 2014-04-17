@@ -19,31 +19,23 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 
-from django.db import models
+
 from django.utils.timezone import now
+from djangodav.db.resource import NameLookupDBDavResource
+from djangodav.models import CollectionModel, ObjectModel
 
 
-class BaseDavModel(models.Model):
-    name = models.CharField(max_length=255)
-    created = models.DateTimeField(default=now)
-    modified = models.DateTimeField(default=now)
+class MyDBDavResource(NameLookupDBDavResource):
+    collection_model = CollectionModel()
+    object_model = ObjectModel()
 
-    class Meta:
-        abstract = True
+    def write(self, content):
+        if not self.exists():
+            self.object_model.objects.create(name=self.displayname, parent=self.get_parent().obj)
+            return
+        self.obj.modified = now()
+        self.obj.content = content
+        self.obj.save(update_fields=['content', 'modified'])
 
-
-class CollectionModel(BaseDavModel):
-    parent = models.ForeignKey('self', blank=True, null=True)
-    size = 0
-
-    class Meta:
-        unique_together = (('parent', 'name'),)
-
-
-class ObjectModel(BaseDavModel):
-    parent = models.ForeignKey(CollectionModel, blank=True, null=True)
-    size = models.IntegerField(default=0)
-    content = models.TextField(default=u"")
-
-    class Meta:
-        unique_together = (('parent', 'name'),)
+    def read(self):
+        return self.obj.content

@@ -25,9 +25,12 @@ from djangodav.views import WebDavView
 from django.conf.urls import patterns
 
 from samples.fs.resource import TempDirWebDavResource
+from samples.db.resource import MyDBDavResource
 
 
 urlpatterns = patterns('',
-    # This will simply export the directory configured by DAV_ROOT in settings.py
+    # Mirroring tmp folder
     (r'^temp(?P<path>.*)$', WebDavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock)),
+    # Db file keeper
+    (r'^db(?P<path>.*)$', WebDavView.as_view(resource_class=MyDBDavResource, lock_class=DummyLock)),
 )
