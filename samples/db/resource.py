@@ -51,5 +51,4 @@ class MyDBDavResource(NameLookupDBDavResource):
 
     @property
     def getcontentlength(self):
-        print self.obj.size
         return self.obj.size
