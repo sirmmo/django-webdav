@@ -34,11 +34,11 @@ class TestBaseDavResource(TestCase):
 
     @patch('djangodav.base.resource.BaseDavResource.isdir', Mock(return_value=True))
     def test_get_path_collection(self):
-        self.assertEqual(self.resource.get_path(), 'path/to/name/')
+        self.assertEqual(self.resource.get_path(), '/path/to/name/')
 
     @patch('djangodav.base.resource.BaseDavResource.isdir', Mock(return_value=False))
     def test_get_path_object(self):
-        self.assertEqual(self.resource.get_path(), 'path/to/name')
+        self.assertEqual(self.resource.get_path(), '/path/to/name')
 
     @patch('djangodav.base.resource.BaseDavResource.get_children', Mock(return_value=[]))
     def test_get_descendants(self):
@@ -80,7 +80,7 @@ class TestFSDavResource(TestCase):
     @patch('djangodav.fs.resource.os.path.getsize')
     def test_get_size(self, getsize):
         getsize.return_value = 42
-        self.assertEquals(self.resource.get_size(), 42)
+        self.assertEquals(self.resource.getcontentlength, 42)
         getsize.assert_called_with('/some/folder/path/to/name')
 
     def test_get_abs_path(self):
