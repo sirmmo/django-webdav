@@ -192,7 +192,6 @@ class WebDavView(View):
         if not acl.delete:
             return HttpResponseForbidden()
         self.lock_class(self.resource).del_locks()
-        self.props.del_props(self.resource)
         self.resource.delete()
         response = HttpResponseNoContent()
         response['Date'] = http_date()
@@ -250,7 +249,6 @@ class WebDavView(View):
             errors = self.resource.move(dst)
         else:
             errors = self.resource.copy(dst, depth=depth)
-        self.props.copy_props(self.resource, dst, move=move)
         if move:
             self.lock_class(self.resource).del_locks()
         if errors:
