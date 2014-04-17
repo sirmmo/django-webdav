@@ -19,6 +19,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from operator import and_
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from django.utils.functional import cached_property
 from djangodav.base.resource import BaseDavResource
@@ -122,23 +123,33 @@ class BaseDBDavResource(BaseDavResource):
 class NameLookupDBDavResource(BaseDBDavResource):
     """Object lookup by joining collections tables to fit given path"""
 
+    def __init__(self, path, **kwargs):
+        self.possible_collection = path.endswith("/")
+        super(NameLookupDBDavResource, self).__init__(path, **kwargs)
+
+    def get_object(self):
+        parent = self.get_model_by_path(self.collection_model, *self.path[:-1])
+        qs = self.object_model.objects.select_related(self.collection_attribute)
+        return qs.get(**{self.collection_attribute: parent, 'name': self.path[-1]})
+
+    def get_collection(self):
+        return self.get_model_by_path(self.collection_model, *self.path)
+
     @cached_property
     def obj(self):
         if not self.path:
             return None
-        try:
-            return self.get_model_by_path(self.collection_model, *self.path)
-        except self.collection_model.DoesNotExist:
-            name = self.path[-1]
+
+        if not self.possible_collection:  # Reducing queries
+            attempts = [self.get_collection, self.get_object]
+        else:
+            attempts = [self.get_object, self.get_collection]
+
+        for get_object in attempts:
             try:
-                parent = self.get_model_by_path(self.collection_model, *self.path[:-1])
-            except self.collection_model.DoesNotExist:
-                return
-            try:
-                qs = self.object_model.objects.select_related(self.collection_attribute)
-                return qs.get(**{self.collection_attribute: parent, 'name': name})
-            except self.object_model.DoesNotExist:
-                pass
+                return get_object()
+            except ObjectDoesNotExist:
+                continue
 
     def get_model_by_path(self, model, *path):
         if not path:
