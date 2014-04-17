@@ -34,13 +34,13 @@ class TestFSDavResource(TestCase):
     @patch('djangodav.fs.resource.os.path.isdir')
     def test_is_collection(self, isdir):
         isdir.return_value = True
-        self.assertTrue(self.resource.is_collection())
+        self.assertTrue(self.resource.is_collection)
         isdir.assert_called_with('/some/folder/path/to/name')
 
     @patch('djangodav.fs.resource.os.path.isfile')
     def test_isfile(self, isfile):
         isfile.return_value = True
-        self.assertTrue(self.resource.is_object())
+        self.assertTrue(self.resource.is_object)
         isfile.assert_called_with('/some/folder/path/to/name')
 
     @patch('djangodav.fs.resource.os.path.exists')

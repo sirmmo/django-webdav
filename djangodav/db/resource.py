@@ -26,9 +26,6 @@ from djangodav.utils import url_join
 
 
 class BaseDBDavResource(BaseDavResource):
-    __is_object = False
-    __exists = False
-
     collection_model = None
     object_model = None
 
@@ -41,12 +38,10 @@ class BaseDBDavResource(BaseDavResource):
     def __init__(self, path, **kwargs):
         if 'obj' in kwargs:  # Accepting ready object to reduce db requests
             self.__dict__['obj'] = kwargs.pop('obj')
-            self.__exists = True
-            if isinstance(self.obj, self.object_model):
-                self.__is_object = True
         super(BaseDBDavResource, self).__init__(path)
         if not self.path:
-            self.__exists = True
+            self.__dict__['obj'] = None
+            self.__dict__['exists'] = True
 
     @cached_property
     def obj(self):
@@ -64,18 +59,21 @@ class BaseDBDavResource(BaseDavResource):
     def getlastmodified(self):
         return getattr(self.obj, self.modified_attribute)
 
+    @property
     def is_collection(self):
-        return self.__exists and not self.__is_object
+        return not self.is_object
 
+    @property
     def is_object(self):
-        return self.__exists and self.__is_object
+        return isinstance(self.obj, self.object_model)
 
+    @cached_property
     def exists(self):
-        return self.__exists
+        return self.obj
 
     def get_children(self):
         """Return an iterator of all direct children of this resource."""
-        if self.__exists and not self.obj is None and isinstance(self.obj, self.object_model):
+        if self.exists and not self.obj is None and isinstance(self.obj, self.object_model):
             return
 
         for model in [self.collection_model, self.object_model]:
@@ -126,23 +124,14 @@ class NameLookupDBDavResource(BaseDBDavResource):
 
     @cached_property
     def obj(self):
-        if not self.path:
-            self.__exists = True
-            return
-
         try:
-            obj = self.get_model_by_path(self.collection_model, *self.path)
-            self.__exists = True
-            return obj
+            return self.get_model_by_path(self.collection_model, *self.path)
         except self.collection_model.DoesNotExist:
             name = self.path[-1]
             parent = self.get_model_by_path(self.collection_model, *self.path[:-1])
             try:
                 qs = self.object_model.objects.select_related(self.collection_attribute)
-                obj = qs.get({self.collection_attribute: parent, 'name': name})
-                self.__exists = True
-                self.__is_object = True
-                return obj
+                return qs.get({self.collection_attribute: parent, 'name': name})
             except self.object_model.DoesNotExist:
                 pass
 

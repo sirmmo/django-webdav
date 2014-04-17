@@ -39,7 +39,7 @@ class BaseDavResource(object):
 
     def get_path(self):
         path = [urlquote(p) for p in self.path]
-        return ("/" if path else "") + "/".join(path) + ("/" * (self.is_collection()))
+        return ("/" if path else "") + "/".join(path) + ("/" * self.is_collection)
 
     def get_displaypath(self):
         return ("/" if self.path else "") + "/".join(self.path) + ("/" * (self.is_collection()))
@@ -97,19 +97,16 @@ class BaseDavResource(object):
     def read(self):
         raise NotImplementedError()
 
+    @property
     def is_collection(self):
         raise NotImplementedError()
 
+    @property
     def is_object(self):
         raise NotImplementedError()
 
+    @property
     def exists(self):
-        raise NotImplementedError()
-
-    def get_ctime(self):
-        raise NotImplementedError()
-
-    def get_mtime(self):
         raise NotImplementedError()
 
     def get_children(self):

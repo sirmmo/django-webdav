@@ -59,19 +59,19 @@ class WebDavView(View):
         if self.path in ('/', '*'):
             return response
         response['Allow'] = ", ".join(self._allowed_methods())
-        if self.resource.exists() and self.resource.is_object():
+        if self.resource.exists and self.resource.is_object:
             response['Allow-Ranges'] = 'bytes'
         return response
 
     def _allowed_methods(self):
         allowed = ['OPTIONS']
-        if not self.resource.exists():
+        if not self.resource.exists:
             res = self.resource.get_parent()
-            if not res.is_collection():
+            if not res.is_collection:
                 return HttpResponseNotFound()
             return allowed + ['PUT', 'MKCOL']
         allowed += ['HEAD', 'GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK']
-        if self.resource.is_object():
+        if self.resource.is_object:
             allowed += ['PUT']
         return allowed
 
@@ -100,7 +100,7 @@ class WebDavView(View):
         return depth
 
     def evaluate_conditions(self, res):
-        if not res.exists():
+        if not res.exists:
             return
         etag = res.get_etag()
         mtime = res.get_mtime_stamp()
@@ -144,22 +144,22 @@ class WebDavView(View):
 
     def get(self, request, path, head=False, *args, **kwargs):
         acl = self.get_access(self.path)
-        if not self.resource.exists():
+        if not self.resource.exists:
             return HttpResponseNotFound()
-        if not head and self.resource.is_collection():
+        if not head and self.resource.is_collection:
             if not acl.listing:
                 return HttpResponseForbidden()
             return render_to_response(self.template_name, {'res': self.resource, 'base_url': self.base_url})
         else:
             if not acl.read:
                 return HttpResponseForbidden()
-            if head and self.resource.exists():
+            if head and self.resource.exists:
                 response = HttpResponse()
             elif head:
                 response = HttpResponseNotFound()
             else:
                 response = HttpResponse(self.resource.read())
-            if self.resource.exists():
+            if self.resource.exists:
                 response['Content-Type'] = mimetypes.guess_type(self.resource.displayname)[0]
                 response['Content-Length'] = self.resource.getcontentlength
                 response['Last-Modified'] = self.resource.getlastmodified
@@ -171,14 +171,14 @@ class WebDavView(View):
         return self.get(request, path, head=True, *args, **kwargs)
 
     def put(self, request, path, *args, **kwargs):
-        if self.resource.is_collection():
+        if self.resource.is_collection:
             return HttpResponseNotAllowed(self._allowed_methods())
-        if not self.resource.get_parent().exists():
+        if not self.resource.get_parent().exists:
             return HttpResponseNotFound()
         acl = self.get_access(self.path)
         if not acl.write:
             return HttpResponseForbidden()
-        created = not self.resource.exists()
+        created = not self.resource.exists
         self.resource.write(self.request.body)
         if created:
             return HttpResponseCreated()
@@ -186,7 +186,7 @@ class WebDavView(View):
             return HttpResponseNoContent()
 
     def delete(self, request, path, *args, **kwargs):
-        if not self.resource.exists():
+        if not self.resource.exists:
             return HttpResponseNotFound()
         acl = self.get_access(self.path)
         if not acl.delete:
@@ -198,9 +198,9 @@ class WebDavView(View):
         return response
 
     def mkcol(self, request, path, *args, **kwargs):
-        if self.resource.exists():
+        if self.resource.exists:
             return HttpResponseNotAllowed(self._allowed_methods())
-        if not self.resource.get_parent().exists():
+        if not self.resource.get_parent().exists:
             return HttpResponseConflict()
         length = self.request.META.get('CONTENT_LENGTH', 0)
         if length and int(length) != 0:
@@ -212,7 +212,7 @@ class WebDavView(View):
         return HttpResponseCreated()
 
     def copy(self, request, path, move=False, *args, **kwargs):
-        if not self.resource.exists():
+        if not self.resource.exists:
             return HttpResponseNotFound()
         acl = self.get_access(self.path)
         if not acl.relocate:
@@ -227,20 +227,20 @@ class WebDavView(View):
             return HttpResponseBadGateway('Source and destination must have the same scheme and host.')
         # adjust path for our base url:
         dst = self.get_resource_by_path(dparts.path[len(self.base_url):])
-        if not dst.get_parent().exists():
+        if not dst.get_parent().exists:
             return HttpResponseConflict()
         overwrite = self.request.META.get('HTTP_OVERWRITE', 'T')
         if overwrite not in ('T', 'F'):
             return HttpResponseBadRequest('Overwrite header must be T or F.')
         overwrite = (overwrite == 'T')
-        if not overwrite and dst.exists():
+        if not overwrite and dst.exists:
             return HttpResponsePreconditionFailed('Destination exists and overwrite False.')
         depth = self.get_depth()
         if move and depth != -1:
             return HttpResponseBadRequest()
         if depth not in (0, -1):
             return HttpResponseBadRequest()
-        dst_exists = dst.exists()
+        dst_exists = dst.exists
         if move:
             if dst_exists:
                 self.lock_class(self.resource).del_locks()
@@ -327,7 +327,7 @@ class WebDavView(View):
         return HttpResponseNoContent()
 
     def propfind(self, request, path, xbody=None, *args, **kwargs):
-        if not self.resource.exists():
+        if not self.resource.exists:
             return HttpResponseNotFound()
 
         if not self.get_access(self.path):
@@ -376,7 +376,7 @@ class WebDavView(View):
         return response
 
     def proppatch(self, request, path, *args, **kwargs):
-        if not self.resource.exists():
+        if not self.resource.exists:
             return HttpResponseNotFound()
         depth = self.get_depth(default="0")
         if depth != 0:

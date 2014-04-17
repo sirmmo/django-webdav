@@ -53,7 +53,7 @@ def get_property_tag_list(res, *names):
 
 def get_property_tag(res, name):
     if name == 'resourcetype':
-        if res.is_collection():
+        if res.is_collection:
             return D(name, D.collection)
         return D(name)
     try:
