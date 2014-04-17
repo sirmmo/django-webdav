@@ -45,6 +45,8 @@ class BaseDBDavResource(BaseDavResource):
             if isinstance(self.obj, self.object_model):
                 self.__is_object = True
         super(BaseDBDavResource, self).__init__(path)
+        if not self.path:
+            self.__exists = True
 
     @cached_property
     def obj(self):
