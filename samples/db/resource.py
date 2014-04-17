@@ -22,11 +22,11 @@ from base64 import b64encode, b64decode
 from hashlib import md5
 
 from django.utils.timezone import now
-from djangodav.db.resource import NameLookupDBDavResource
+from djangodav.db.resource import NameLookupDBDavMixIn, BaseDBDavResource
 from samples.db.models import CollectionModel, ObjectModel
 
 
-class MyDBDavResource(NameLookupDBDavResource):
+class MyDBDavResource(NameLookupDBDavMixIn, BaseDBDavResource):
     collection_model = CollectionModel
     object_model = ObjectModel
 

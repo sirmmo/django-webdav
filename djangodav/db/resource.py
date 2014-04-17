@@ -96,12 +96,12 @@ class BaseDBDavResource(BaseDavResource):
         self.obj.delete()
 
 
-class NameLookupDBDavResource(BaseDBDavResource):
+class NameLookupDBDavMixIn(object):
     """Object lookup by joining collections tables to fit given path"""
 
     def __init__(self, path, **kwargs):
         self.possible_collection = path.endswith("/")
-        super(NameLookupDBDavResource, self).__init__(path, **kwargs)
+        super(NameLookupDBDavMixIn, self).__init__(path, **kwargs)
 
     def get_object(self):
         parent = self.get_model_by_path(self.collection_model, *self.path[:-1])
