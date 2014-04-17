@@ -100,6 +100,8 @@ class BaseDavResource(object):
         if self.is_collection:
             self.copy_collection(destination, depth)
         else:
+            if destination.is_object:
+                destination.delete()
             self.copy_object(destination)
 
     def copy_collection(self, destination, depth=0):
@@ -107,8 +109,6 @@ class BaseDavResource(object):
         will refuse to copy to an existing resource otherwise. This method needs to gracefully
         handle a pre-existing destination of any type. It also needs to respect the depth
         parameter. depth == -1 is infinity."""
-        if destination.is_object:
-            destination.delete()
         if not destination.is_collection:
             destination.create_collection()
         # If depth is less than 0, then it started out as -1.
@@ -129,6 +129,8 @@ class BaseDavResource(object):
         if self.is_collection:
             self.move_collection(destination)
         else:
+            if destination.is_object:
+                destination.delete()
             self.move_object(destination)
 
     def move_collection(self, destination):

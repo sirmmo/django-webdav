@@ -105,8 +105,6 @@ class BaseFSDavResource(BaseDavResource):
         os.mkdir(self.get_abs_path())
 
     def copy_object(self, destination, depth=0):
-        if destination.is_collection:
-            destination.delete()
         shutil.copy(self.get_abs_path(), destination.get_abs_path())
 
     def move_object(self, destination):
