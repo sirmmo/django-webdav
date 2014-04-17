@@ -81,7 +81,7 @@ class BaseDBDavResource(BaseDavResource):
         for model in [self.collection_model, self.object_model]:
             for child in model.objects.filter(**{self.collection_attribute: self.obj}):
                 yield self.__class__(
-                    url_join(*(self.path + [child])),
+                    url_join(*(self.path + [child.name])),
                     obj=child    # Sending ready object to reduce db requests
                 )
 
@@ -100,14 +100,9 @@ class BaseDBDavResource(BaseDavResource):
         """Create a directory in the location of this resource."""
         if hasattr(self, 'obj'):
             raise Exception('exists')
-        parent = None
-        for i in range(len(self.path)):
-            path = self.path[:i+1]
-            name = path[-1]
-            try:
-                parent = self.collection_model.objects.get_by_path(path)
-            except self.collection_model.DoesNotExist:
-                parent = self.collection_model.objects.create({self.collection_attribute: parent, 'name': name})
+        name = self.path[-1]
+        parent = self.__class__("/".join(self.path[:-1])).obj
+        self.collection_model.objects.create(**{self.collection_attribute: parent, 'name': name})
 
     def copy(self, destination, depth=0):
         """Called to copy a resource to a new location. Overwrite is assumed, the DAV server
