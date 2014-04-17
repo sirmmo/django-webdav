@@ -198,7 +198,7 @@ class WebDavView(View):
         return response
 
     def mkcol(self, request, path, *args, **kwargs):
-        if self.resource.exists:
+        if self.resource.is_collection and self.resource.exists:
             return HttpResponseNotAllowed(self._allowed_methods())
         if not self.resource.get_parent().exists:
             return HttpResponseConflict()
