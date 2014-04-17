@@ -104,41 +104,14 @@ class BaseFSDavResource(BaseDavResource):
         """Create a directory in the location of this resource."""
         os.mkdir(self.get_abs_path())
 
-    def copy(self, destination, depth=0):
-        """Called to copy a resource to a new location. Overwrite is assumed, the DAV server
-        will refuse to copy to an existing resource otherwise. This method needs to gracefully
-        handle a pre-existing destination of any type. It also needs to respect the depth
-        parameter. depth == -1 is infinity."""
-        if self.is_collection:
-            if destination.is_object:
-                destination.delete()
-            if not destination.is_collection:
-                destination.create_collection()
-            # If depth is less than 0, then it started out as -1.
-            # We need to keep recursing until we hit 0, or forever
-            # in case of infinity.
-            if depth != 0:
-                for child in self.get_children():
-                    child.copy(self.__class__(safe_join(destination.path, child.displayname)),
-                               depth=depth-1)
-        else:
-            if destination.is_collection:
-                destination.delete()
-            shutil.copy(self.get_abs_path(), destination.get_abs_path())
-
-    def move(self, destination):
-        """Called to move a resource to a new location. Overwrite is assumed, the DAV server
-        will refuse to move to an existing resource otherwise. This method needs to gracefully
-        handle a pre-existing destination of any type."""
-        if destination.exists:
+    def copy_object(self, destination, depth=0):
+        if destination.is_collection:
             destination.delete()
-        if self.is_collection:
-            destination.create_collection()
-            for child in self.get_children():
-                child.move(self.__class__(safe_join(destination.path, child.displayname)))
-            self.delete()
-        else:
-            os.rename(self.get_abs_path(), destination.get_abs_path())
+        shutil.copy(self.get_abs_path(), destination.get_abs_path())
+
+    def move_object(self, destination):
+        os.rename(self.get_abs_path(), destination.get_abs_path())
+
 
 class DummyReadFSDavResource(BaseFSDavResource):
     def read(self):
