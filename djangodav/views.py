@@ -14,8 +14,8 @@ from djangodav.base.acl import DavAcl
 from djangodav.response import ResponseException, HttpResponsePreconditionFailed, HttpResponseCreated, HttpResponseNoContent, \
     HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, HttpResponseNotImplemented, \
     HttpResponseMultiStatus, HttpResponseLocked
-from djangodav.base.property import DavProperty
 from djangodav.utils import WEBDAV_NSMAP, D, url_join, get_property_tag_list
+
 
 PATTERN_IF_DELIMITER = re.compile(r'(<([^>]+)>)|(\(([^\)]+)\))')
 
@@ -24,14 +24,12 @@ class WebDavView(View):
     resource_class = None
     lock_class = None
     acl_class = DavAcl
-    property_class = DavProperty
     template_name = 'djangodav/index.html'
     http_method_names = ['options', 'put', 'mkcol', 'head', 'get', 'delete', 'propfind', 'proppatch', 'copy', 'move', 'lock', 'unlock']
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, path, *args, **kwargs):
         self.path = path
-        self.props = self.property_class(self)
         self.base_url = request.META['PATH_INFO'][:-len(self.path)]
 
         meta = request.META.get
@@ -248,7 +246,6 @@ class WebDavView(View):
             if dst_exists:
                 self.lock_class(self.resource).del_locks()
                 self.lock_class(dst).del_locks()
-                self.props.del_props(dst)
                 dst.delete()
             errors = self.resource.move(dst)
         else:
