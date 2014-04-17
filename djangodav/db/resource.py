@@ -34,14 +34,12 @@ class BaseDBDavResource(BaseDavResource):
     modified_attribute = 'modified'
     name_attribute = 'name'
     size_attribute = 'size'
+    is_root = False
 
     def __init__(self, path, **kwargs):
         if 'obj' in kwargs:  # Accepting ready object to reduce db requests
             self.__dict__['obj'] = kwargs.pop('obj')
         super(BaseDBDavResource, self).__init__(path)
-        if not self.path:
-            self.__dict__['obj'] = None
-            self.__dict__['exists'] = True
 
     @cached_property
     def obj(self):
@@ -61,7 +59,7 @@ class BaseDBDavResource(BaseDavResource):
 
     @property
     def is_collection(self):
-        return not self.is_object
+        return self.is_root or isinstance(self.obj, self.collection_model)
 
     @property
     def is_object(self):
@@ -69,11 +67,15 @@ class BaseDBDavResource(BaseDavResource):
 
     @cached_property
     def exists(self):
-        return self.obj
+        return self.is_root or self.obj
+
+    @cached_property
+    def is_root(self):
+        return not bool(self.path)
 
     def get_children(self):
         """Return an iterator of all direct children of this resource."""
-        if self.exists and not self.obj is None and isinstance(self.obj, self.object_model):
+        if not self.exists or isinstance(self.obj, self.object_model):
             return
 
         for model in [self.collection_model, self.object_model]:
@@ -96,8 +98,6 @@ class BaseDBDavResource(BaseDavResource):
 
     def create_collection(self):
         """Create a directory in the location of this resource."""
-        if isinstance(self.obj, self.collection_model):
-            raise Exception('exists')
         name = self.path[-1]
         parent = self.__class__("/".join(self.path[:-1])).obj
         self.collection_model.objects.create(**{self.collection_attribute: parent, 'name': name})
@@ -124,11 +124,16 @@ class NameLookupDBDavResource(BaseDBDavResource):
 
     @cached_property
     def obj(self):
+        if not self.path:
+            return None
         try:
             return self.get_model_by_path(self.collection_model, *self.path)
         except self.collection_model.DoesNotExist:
             name = self.path[-1]
-            parent = self.get_model_by_path(self.collection_model, *self.path[:-1])
+            try:
+                parent = self.get_model_by_path(self.collection_model, *self.path[:-1])
+            except self.collection_model.DoesNotExist:
+                return
             try:
                 qs = self.object_model.objects.select_related(self.collection_attribute)
                 return qs.get(**{self.collection_attribute: parent, 'name': name})

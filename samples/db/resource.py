@@ -18,11 +18,12 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
-
+from base64 import b64encode, b64decode
+from hashlib import md5
 
 from django.utils.timezone import now
 from djangodav.db.resource import NameLookupDBDavResource
-from djangodav.models import CollectionModel, ObjectModel
+from samples.db.models import CollectionModel, ObjectModel
 
 
 class MyDBDavResource(NameLookupDBDavResource):
@@ -30,12 +31,25 @@ class MyDBDavResource(NameLookupDBDavResource):
     object_model = ObjectModel
 
     def write(self, content):
-        if not self.exists():
-            self.object_model.objects.create(name=self.displayname, parent=self.get_parent().obj)
+        size = len(content)
+        hashsum = md5(content).hexdigest()
+        if not self.exists:
+            self.object_model.objects.create(name=self.displayname, parent=self.get_parent().obj, md5=hashsum, size=size)
             return
+        self.obj.size = size
         self.obj.modified = now()
-        self.obj.content = content
-        self.obj.save(update_fields=['content', 'modified'])
+        self.obj.content = b64encode(content)
+        self.md5 = hashsum
+        self.obj.save(update_fields=['content', 'size', 'modified', 'md5'])
 
     def read(self):
-        return self.obj.content
+        return b64decode(self.obj.content)
+
+    @property
+    def getetag(self):
+        return self.obj.md5
+
+    @property
+    def getcontentlength(self):
+        print self.obj.size
+        return self.obj.size
