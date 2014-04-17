@@ -1,5 +1,5 @@
 import mimetypes, urllib, urlparse, re
-from sys import version_info
+from sys import version_info as python_version
 from lxml import etree
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseNotAllowed, HttpResponseBadRequest, \
@@ -16,8 +16,8 @@ from djangodav.response import ResponseException, HttpResponsePreconditionFailed
     HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, HttpResponseNotImplemented, \
     HttpResponseMultiStatus, HttpResponseLocked
 from djangodav.utils import WEBDAV_NSMAP, D, url_join, get_property_tag_list
-from djangodav import get_version as djangodav_get_version
-from django import get_version as django_get_version
+from djangodav import VERSION as djangodav_version
+from django import VERSION as django_version, get_version
 
 PATTERN_IF_DELIMITER = re.compile(r'(<([^>]+)>)|(\(([^\)]+)\))')
 
@@ -29,9 +29,9 @@ class WebDavView(View):
     template_name = 'djangodav/index.html'
     http_method_names = ['options', 'put', 'mkcol', 'head', 'get', 'delete', 'propfind', 'proppatch', 'copy', 'move', 'lock', 'unlock']
     server_header = 'DjangoDav/%s Django/%s Python/%s' % (
-        djangodav_get_version(),
-        django_get_version(),
-        django_get_version(version_info)
+        get_version(djangodav_version),
+        get_version(django_version),
+        get_version(python_version)
     )
 
     @method_decorator(csrf_exempt)
