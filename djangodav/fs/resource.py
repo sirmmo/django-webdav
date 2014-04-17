@@ -130,7 +130,7 @@ class BaseFSDavResource(BaseDavResource):
         """Called to move a resource to a new location. Overwrite is assumed, the DAV server
         will refuse to move to an existing resource otherwise. This method needs to gracefully
         handle a pre-existing destination of any type."""
-        if destination.exists():
+        if destination.exists:
             destination.delete()
         if self.is_collection:
             destination.create_collection()
