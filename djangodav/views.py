@@ -1,4 +1,5 @@
 import mimetypes, urllib, urlparse, re
+from sys import version_info
 from lxml import etree
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseNotAllowed, HttpResponseBadRequest, \
@@ -15,7 +16,8 @@ from djangodav.response import ResponseException, HttpResponsePreconditionFailed
     HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, HttpResponseNotImplemented, \
     HttpResponseMultiStatus, HttpResponseLocked
 from djangodav.utils import WEBDAV_NSMAP, D, url_join, get_property_tag_list
-
+from djangodav import get_version as djangodav_get_version
+from django import get_version as django_get_version
 
 PATTERN_IF_DELIMITER = re.compile(r'(<([^>]+)>)|(\(([^\)]+)\))')
 
@@ -26,6 +28,11 @@ class WebDavView(View):
     acl_class = DavAcl
     template_name = 'djangodav/index.html'
     http_method_names = ['options', 'put', 'mkcol', 'head', 'get', 'delete', 'propfind', 'proppatch', 'copy', 'move', 'lock', 'unlock']
+    server_header = 'DjangoDav/%s Django/%s Python/%s' % (
+        djangodav_get_version(),
+        django_get_version(),
+        django_get_version(version_info)
+    )
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, path, *args, **kwargs):
@@ -49,6 +56,8 @@ class WebDavView(View):
             resp = e.response
         if not 'Allow' in resp:
             resp['Allow'] = ", ".join(self._allowed_methods())
+        if self.server_header:
+            resp['Server'] = self.server_header
         return resp
 
     def options(self, request, path, *args, **kwargs):
