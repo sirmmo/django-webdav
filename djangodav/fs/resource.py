@@ -67,19 +67,6 @@ class BaseFSDavResource(BaseDavResource):
         return http_date(os.stat(self.get_abs_path()).st_ctime)
 
     @property
-    def getetag(self):
-        """Calculate an etag for this resource. The default implementation uses an md5 sub of the
-        absolute path modified time and size. Can be overridden if resources are not stored in a
-        file system. The etag is used to detect changes to a resource between HTTP calls. So this
-        needs to change if a resource is modified."""
-        hashsum = hashlib.md5()
-        hashsum.update(self.get_abs_path().encode('utf-8'))
-        hashsum.update(str(self.get_mtime()))
-        hashsum.update(str(self.get_ctime()))
-        hashsum.update(str(self.getcontentlength))
-        return hashsum.hexdigest()
-
-    @property
     def is_collection(self):
         """Return True if this resource is a directory (collection in WebDAV parlance)."""
         return os.path.isdir(self.get_abs_path())

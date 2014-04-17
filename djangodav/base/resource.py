@@ -18,7 +18,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
-
+from hashlib import md5
 
 from django.utils.http import urlquote
 
@@ -117,3 +117,18 @@ class BaseDavResource(object):
 
     def create_collection(self):
         raise NotImplementedError()
+
+
+class MetaEtagMixIn(object):
+    @property
+    def getetag(self):
+        """Calculate an etag for this resource. The default implementation uses an md5 sub of the
+        absolute path modified time and size. Can be overridden if resources are not stored in a
+        file system. The etag is used to detect changes to a resource between HTTP calls. So this
+        needs to change if a resource is modified."""
+        hashsum = md5()
+        hashsum.update(self.displayname)
+        hashsum.update(str(self.creationdate))
+        hashsum.update(str(self.getlastmodified))
+        hashsum.update(str(self.getcontentlength))
+        return hashsum.hexdigest()
