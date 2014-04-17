@@ -26,8 +26,8 @@ from djangodav.models import CollectionModel, ObjectModel
 
 
 class MyDBDavResource(NameLookupDBDavResource):
-    collection_model = CollectionModel()
-    object_model = ObjectModel()
+    collection_model = CollectionModel
+    object_model = ObjectModel
 
     def write(self, content):
         if not self.exists():
