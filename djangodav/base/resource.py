@@ -21,6 +21,7 @@
 from hashlib import md5
 
 from django.utils.http import urlquote
+from djangodav.utils import rfc3339_date, rfc1123_date
 
 
 class BaseDavResource(object):
@@ -75,10 +76,20 @@ class BaseDavResource(object):
 
     @property
     def creationdate(self):
-        raise NotImplementedError()
+        """Return the create time as rfc3339_date."""
+        return rfc3339_date(self.get_created())
 
     @property
     def getlastmodified(self):
+        """Return the modified time as http_date."""
+        return rfc1123_date(self.get_modified())
+
+    def get_created(self):
+        """Return the create time as datetime object."""
+        raise NotImplementedError()
+
+    def get_modified(self):
+        """Return the modified time as datetime object."""
         raise NotImplementedError()
 
     @property

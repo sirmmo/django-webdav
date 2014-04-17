@@ -21,6 +21,8 @@
 
 
 import datetime, time, calendar
+from wsgiref.handlers import format_date_time
+
 try:
     from email.utils import parsedate_tz
 except ImportError:
@@ -107,6 +109,10 @@ def rfc3339_date(date):
     if time.daylight:
         date += datetime.timedelta(seconds=time.altzone)
     return date.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
+def rfc1123_date(date):
+    return format_date_time(time.mktime(date.timetuple()))
 
 
 def parse_time(timestring):

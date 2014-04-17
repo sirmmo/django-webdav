@@ -50,12 +50,10 @@ class BaseDBDavResource(BaseDavResource):
     def getcontentlength(self):
         return getattr(self.obj, self.size_attribute)
 
-    @property
-    def creationdate(self):
+    def get_created(self):
         return getattr(self.obj, self.created_attribute)
 
-    @property
-    def getlastmodified(self):
+    def get_modified(self):
         return getattr(self.obj, self.modified_attribute)
 
     @property

@@ -39,8 +39,8 @@
 {% for child in res.get_children %}
 <tr>
     <td><a href="{{ base_url }}{{ child.get_path }}">{{ child.displayname }}</a></td>
-    <td align="right">{{ child.creationdate|date:"d-M-Y H:i" }}</td>
-    <td align="right">{{ child.getlastmodified|date:"d-M-Y H:i" }}</td>
+    <td align="right">{{ child.get_created|date:"d-M-Y H:i" }}</td>
+    <td align="right">{{ child.get_modified|date:"d-M-Y H:i" }}</td>
     <td align="right">{{ child.getcontentlength|filesizeformat }}</td>
 </tr>
 {% endfor %}
