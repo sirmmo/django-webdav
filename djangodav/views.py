@@ -90,13 +90,12 @@ class WebDavView(View):
         system."""
         return self.acl_class(listing=True, read=True, full=False)
 
-    def get_resource_by_path(self, path):
-        """Return a DavResource object to represent the given path."""
-        return self.resource_class(path)
+    def get_resource_kwargs(self, **kwargs):
+        return kwargs
 
     @cached_property
     def resource(self):
-        return self.get_resource_by_path(self.path)
+        return self.resource_class(**self.get_resource_kwargs(path=self.path))
 
     def get_depth(self, default='infinity'):
         depth = str(self.request.META.get('HTTP_DEPTH', default)).lower()
@@ -242,7 +241,7 @@ class WebDavView(View):
         if sparts.scheme != dparts.scheme or sparts.netloc != dparts.netloc:
             return HttpResponseBadGateway('Source and destination must have the same scheme and host.')
         # adjust path for our base url:
-        dst = self.get_resource_by_path(dparts.path[len(self.base_url):])
+        dst = self.resource_class(dparts.path[len(self.base_url):])
         if not dst.get_parent().exists:
             return HttpResponseConflict()
         overwrite = self.request.META.get('HTTP_OVERWRITE', 'T')
