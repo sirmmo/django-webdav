@@ -23,9 +23,13 @@
 
 from setuptools import setup
 
+
+version = __import__('djangodav').get_version()
+
+
 setup(
     name='DjangoDav',
-    version='0.0.1',
+    version=version,
     description=('A WebDAV server for Django.'),
     long_description=(
 """
