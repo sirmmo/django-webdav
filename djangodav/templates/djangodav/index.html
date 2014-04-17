@@ -41,7 +41,7 @@
     <td><a href="{{ base_url }}{{ child.get_path }}">{{ child.displayname }}</a></td>
     <td align="right">{{ child.creationdate|date:"d-M-Y H:i" }}</td>
     <td align="right">{{ child.getlastmodified|date:"d-M-Y H:i" }}</td>
-    <td align="right">{{ child.get_size|filesizeformat }}</td>
+    <td align="right">{{ child.getcontentlength|filesizeformat }}</td>
 </tr>
 {% endfor %}
 <tr><th colspan="5"><hr></th></tr>
