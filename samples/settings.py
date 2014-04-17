@@ -140,3 +140,6 @@ LOGGING = {
         },
     }
 }
+
+from tempfile import gettempdir
+WEBDAV_ROOT = gettempdir()

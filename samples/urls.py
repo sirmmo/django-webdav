@@ -30,7 +30,7 @@ from samples.db.resource import MyDBDavResource
 
 urlpatterns = patterns('',
     # Mirroring tmp folder
-    (r'^temp(?P<path>.*)$', WebDavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock)),
+    (r'^fs(?P<path>.*)$', WebDavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock)),
     # Db file keeper
     (r'^db(?P<path>.*)$', WebDavView.as_view(resource_class=MyDBDavResource, lock_class=DummyLock)),
 )
