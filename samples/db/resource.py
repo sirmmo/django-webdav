@@ -33,12 +33,19 @@ class MyDBDavResource(NameLookupDBDavMixIn, BaseDBDavResource):
     def write(self, content):
         size = len(content)
         hashsum = md5(content).hexdigest()
+        content = b64encode(content)
         if not self.exists:
-            self.object_model.objects.create(name=self.displayname, parent=self.get_parent().obj, md5=hashsum, size=size)
+            self.object_model.objects.create(
+                name=self.displayname,
+                parent=self.get_parent().obj,
+                md5=hashsum,
+                size=size,
+                content=content
+            )
             return
         self.obj.size = size
         self.obj.modified = now()
-        self.obj.content = b64encode(content)
+        self.obj.content = content
         self.md5 = hashsum
         self.obj.save(update_fields=['content', 'size', 'modified', 'md5'])
 
