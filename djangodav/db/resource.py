@@ -22,6 +22,7 @@ from operator import and_
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from django.utils.functional import cached_property
+from django.utils.timezone import now
 from djangodav.base.resource import BaseDavResource
 from djangodav.utils import url_join
 
@@ -158,11 +159,15 @@ class NameLookupDBDavMixIn(object):
         collection = self.__class__(destination.path).obj
         setattr(self.obj, self.name_attribute, name)
         setattr(self.obj, self.collection_attribute, collection)
-        self.obj.save(update_fields=[self.name_attribute, self.collection_attribute, 'pk'])
+        setattr(self.obj, self.created_attribute, now())
+        setattr(self.obj, self.modified_attribute, now())
+        self.obj.save(update_fields=[self.name_attribute, self.collection_attribute, self.created_attribute,
+                                     self.modified_attribute, 'pk'])
 
     def move_object(self, destination):
         name = destination.path[-1]
         collection = self.__class__(destination.path).obj
         setattr(self.obj, self.name_attribute, name)
         setattr(self.obj, self.collection_attribute, collection)
-        self.obj.save(update_fields=[self.name_attribute, self.collection_attribute])
+        setattr(self.obj, self.modified_attribute, now())
+        self.obj.save(update_fields=[self.name_attribute, self.collection_attribute, self.modified_attribute])
