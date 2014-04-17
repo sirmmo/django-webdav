@@ -66,14 +66,6 @@ class BaseFSDavResource(BaseDavResource):
         """Return the modified time as http_date."""
         return http_date(os.stat(self.get_abs_path()).st_ctime)
 
-    def get_ctime(self):
-        """Return the create time as datetime object."""
-        return datetime.datetime.fromtimestamp(os.stat(self.get_abs_path()).st_ctime)
-
-    def get_mtime(self):
-        """Return the modified time as datetime object."""
-        return datetime.datetime.fromtimestamp(os.stat(self.get_abs_path()).st_mtime)
-
     @property
     def getetag(self):
         """Calculate an etag for this resource. The default implementation uses an md5 sub of the
