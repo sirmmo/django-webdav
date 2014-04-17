@@ -2,7 +2,7 @@ import mimetypes, urllib, urlparse, re
 from lxml import etree
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseNotAllowed, HttpResponseBadRequest, \
-    HttpResponseNotModified
+    HttpResponseNotModified, HttpResponseRedirect
 from django.utils.decorators import method_decorator
 from django.utils.functional import cached_property
 from django.utils.http import http_date, parse_etags
@@ -146,6 +146,10 @@ class WebDavView(View):
         acl = self.get_access(self.path)
         if not self.resource.exists:
             return HttpResponseNotFound()
+        if not path.endswith("/") and self.resource.is_collection:
+            return HttpResponseRedirect(request.build_absolute_uri() + "/")
+        if path.endswith("/") and self.resource.is_object:
+            return HttpResponseRedirect(request.build_absolute_uri().rstrip("/"))
         if not head and self.resource.is_collection:
             if not acl.listing:
                 return HttpResponseForbidden()
