@@ -32,11 +32,11 @@ class TestBaseDavResource(TestCase):
     def test_path(self):
         self.assertEqual(self.resource.path, ['path', 'to', 'name'])
 
-    @patch('djangodav.base.resource.BaseDavResource.isdir', Mock(return_value=True))
+    @patch('djangodav.base.resource.BaseDavResource.is_collection', Mock(return_value=True))
     def test_get_path_collection(self):
         self.assertEqual(self.resource.get_path(), '/path/to/name/')
 
-    @patch('djangodav.base.resource.BaseDavResource.isdir', Mock(return_value=False))
+    @patch('djangodav.base.resource.BaseDavResource.is_collection', Mock(return_value=False))
     def test_get_path_object(self):
         self.assertEqual(self.resource.get_path(), '/path/to/name')
 
@@ -44,8 +44,8 @@ class TestBaseDavResource(TestCase):
     def test_get_descendants(self):
         self.assertEqual(list(self.resource.get_descendants(depth=1, include_self=True)), [self.resource])
 
-    def test_get_dirname(self):
-        self.assertEqual(self.resource.get_dirname(), '/path/to/')
+    def test_get_parent_path(self):
+        self.assertEqual(self.resource.get_parent_path(), '/path/to/')
 
     def test_displayname(self):
         self.assertEqual(self.resource.displayname, 'name')
@@ -60,15 +60,15 @@ class TestFSDavResource(TestCase):
         self.resource = self.FSDavResource("/path/to/name")
 
     @patch('djangodav.fs.resource.os.path.isdir')
-    def test_isdir(self, isdir):
+    def test_is_collection(self, isdir):
         isdir.return_value = True
-        self.assertTrue(self.resource.isdir())
+        self.assertTrue(self.resource.is_collection())
         isdir.assert_called_with('/some/folder/path/to/name')
 
     @patch('djangodav.fs.resource.os.path.isfile')
     def test_isfile(self, isfile):
         isfile.return_value = True
-        self.assertTrue(self.resource.isfile())
+        self.assertTrue(self.resource.is_object())
         isfile.assert_called_with('/some/folder/path/to/name')
 
     @patch('djangodav.fs.resource.os.path.exists')

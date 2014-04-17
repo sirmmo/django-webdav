@@ -53,9 +53,9 @@ def get_property_tag_list(res, *names):
 
 def get_property_tag(res, name):
     if name == 'resourcetype':
-        if res.isfile():
-            return D(name)
-        return D(name, D.collection)
+        if res.is_collection():
+            return D(name, D.collection)
+        return D(name)
     try:
         return D(name, unicode(getattr(res, name)))
     except AttributeError:

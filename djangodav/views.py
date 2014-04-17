@@ -59,7 +59,7 @@ class WebDavView(View):
         if self.path in ('/', '*'):
             return response
         response['Allow'] = ", ".join(self._allowed_methods())
-        if self.resource.exists() and self.resource.isfile():
+        if self.resource.exists() and self.resource.is_object():
             response['Allow-Ranges'] = 'bytes'
         return response
 
@@ -67,11 +67,11 @@ class WebDavView(View):
         allowed = ['OPTIONS']
         if not self.resource.exists():
             res = self.resource.get_parent()
-            if not res.isdir():
+            if not res.is_collection():
                 return HttpResponseNotFound()
             return allowed + ['PUT', 'MKCOL']
         allowed += ['HEAD', 'GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK']
-        if self.resource.isfile():
+        if self.resource.is_object():
             allowed += ['PUT']
         return allowed
 
@@ -146,7 +146,7 @@ class WebDavView(View):
         acl = self.get_access(self.path)
         if not self.resource.exists():
             return HttpResponseNotFound()
-        if not head and self.resource.isdir():
+        if not head and self.resource.is_collection():
             if not acl.listing:
                 return HttpResponseForbidden()
             return render_to_response(self.template_name, {'res': self.resource, 'base_url': self.base_url})
@@ -171,7 +171,7 @@ class WebDavView(View):
         return self.get(request, path, head=True, *args, **kwargs)
 
     def put(self, request, path, *args, **kwargs):
-        if self.resource.isdir():
+        if self.resource.is_collection():
             return HttpResponseNotAllowed(self._allowed_methods())
         if not self.resource.get_parent().exists():
             return HttpResponseNotFound()
@@ -209,7 +209,7 @@ class WebDavView(View):
         acl = self.get_access(self.path)
         if not acl.create:
             return HttpResponseForbidden()
-        self.resource.mkdir()
+        self.resource.create_collection()
         return HttpResponseCreated()
 
     def copy(self, request, path, move=False, *args, **kwargs):

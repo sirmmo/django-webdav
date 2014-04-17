@@ -39,10 +39,10 @@ class BaseDavResource(object):
 
     def get_path(self):
         path = [urlquote(p) for p in self.path]
-        return ("/" if path else "") + "/".join(path) + ("/" * (self.isdir()))
+        return ("/" if path else "") + "/".join(path) + ("/" * (self.is_collection()))
 
     def get_displaypath(self):
-        return ("/" if self.path else "") + "/".join(self.path) + ("/" * (self.isdir()))
+        return ("/" if self.path else "") + "/".join(self.path) + ("/" * (self.is_collection()))
 
     @property
     def displayname(self):
@@ -50,12 +50,12 @@ class BaseDavResource(object):
             return None
         return self.path[-1]
 
-    def get_dirname(self):
+    def get_parent_path(self):
         path = self.path[:-1]
         return "/" + "/".join(path) + "/" if path else ""
 
     def get_parent(self):
-        return self.__class__(self.get_dirname())
+        return self.__class__(self.get_parent_path())
 
     def get_descendants(self, depth=1, include_self=True):
         """Return an iterator of all descendants of this resource."""
@@ -97,10 +97,10 @@ class BaseDavResource(object):
     def read(self):
         raise NotImplementedError()
 
-    def isdir(self):
+    def is_collection(self):
         raise NotImplementedError()
 
-    def isfile(self):
+    def is_object(self):
         raise NotImplementedError()
 
     def exists(self):
@@ -118,5 +118,5 @@ class BaseDavResource(object):
     def delete(self):
         raise NotImplementedError()
 
-    def mkdir(self):
+    def create_collection(self):
         raise NotImplementedError()

@@ -87,11 +87,11 @@ class BaseFSDavResource(BaseDavResource):
         hashsum.update(str(self.getcontentlength))
         return hashsum.hexdigest()
 
-    def isdir(self):
+    def is_collection(self):
         """Return True if this resource is a directory (collection in WebDAV parlance)."""
         return os.path.isdir(self.get_abs_path())
 
-    def isfile(self):
+    def is_object(self):
         """Return True if this resource is a file (resource in WebDAV parlance)."""
         return os.path.isfile(self.get_abs_path())
 
@@ -114,14 +114,14 @@ class BaseFSDavResource(BaseDavResource):
 
     def delete(self):
         """Delete the resource, recursive is implied."""
-        if self.isdir():
+        if self.is_collection():
             for child in self.get_children():
                 child.delete()
             os.rmdir(self.get_abs_path())
-        elif self.isfile():
+        elif self.is_object():
             os.remove(self.get_abs_path())
 
-    def mkdir(self):
+    def create_collection(self):
         """Create a directory in the location of this resource."""
         os.mkdir(self.get_abs_path())
 
@@ -130,11 +130,11 @@ class BaseFSDavResource(BaseDavResource):
         will refuse to copy to an existing resource otherwise. This method needs to gracefully
         handle a pre-existing destination of any type. It also needs to respect the depth
         parameter. depth == -1 is infinity."""
-        if self.isdir():
-            if destination.isfile():
+        if self.is_collection():
+            if destination.is_object():
                 destination.delete()
-            if not destination.isdir():
-                destination.mkdir()
+            if not destination.is_collection():
+                destination.create_collection()
             # If depth is less than 0, then it started out as -1.
             # We need to keep recursing until we hit 0, or forever
             # in case of infinity.
@@ -143,7 +143,7 @@ class BaseFSDavResource(BaseDavResource):
                     child.copy(self.__class__(safe_join(destination.path, child.displayname)),
                                depth=depth-1)
         else:
-            if destination.isdir():
+            if destination.is_collection():
                 destination.delete()
             shutil.copy(self.get_abs_path(), destination.get_abs_path())
 
@@ -153,8 +153,8 @@ class BaseFSDavResource(BaseDavResource):
         handle a pre-existing destination of any type."""
         if destination.exists():
             destination.delete()
-        if self.isdir():
-            destination.mkdir()
+        if self.is_collection():
+            destination.create_collection()
             for child in self.get_children():
                 child.move(self.__class__(safe_join(destination.path, child.displayname)))
             self.delete()
