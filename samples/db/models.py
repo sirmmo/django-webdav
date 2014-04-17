@@ -44,6 +44,7 @@ class ObjectModel(BaseDavModel):
     parent = models.ForeignKey(CollectionModel, blank=True, null=True)
     size = models.IntegerField(default=0)
     content = models.TextField(default=u"")
+    md5 = models.CharField(max_length=255)
 
     class Meta:
         unique_together = (('parent', 'name'),)
