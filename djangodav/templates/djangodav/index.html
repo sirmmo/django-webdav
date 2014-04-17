@@ -28,23 +28,20 @@
 <table>
 <tr>
     <th>Name</th>
+    <th>Created</th>
     <th>Last modified</th>
     <th>Size</th>
-    <th>Description</th>
 </tr>
 <tr><th colspan="5"><hr></th></tr>
 <tr>
     <td><a href="{{ base_url }}{% if not res.get_parent %}/{% endif %}{{ res.get_parent.get_path }}">Parent Directory</a></td>
-    <td></td>
-    <td align="right">-</td>
-    <td></td>
 </tr>
 {% for child in res.get_children %}
 <tr>
     <td><a href="{{ base_url }}{{ child.get_path }}">{{ child.displayname }}</a></td>
-    <td align="right">{{ child.get_mtime|date:"d-M-Y H:i" }}</td>
+    <td align="right">{{ child.creationdate|date:"d-M-Y H:i" }}</td>
+    <td align="right">{{ child.getlastmodified|date:"d-M-Y H:i" }}</td>
     <td align="right">{{ child.get_size|filesizeformat }}</td>
-    <td></td>
 </tr>
 {% endfor %}
 <tr><th colspan="5"><hr></th></tr>
