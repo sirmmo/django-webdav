@@ -96,7 +96,7 @@ class BaseDBDavResource(BaseDavResource):
 
     def create_collection(self):
         """Create a directory in the location of this resource."""
-        if hasattr(self, 'obj'):
+        if isinstance(self.obj, self.collection_model):
             raise Exception('exists')
         name = self.path[-1]
         parent = self.__class__("/".join(self.path[:-1])).obj
@@ -116,7 +116,7 @@ class BaseDBDavResource(BaseDavResource):
         name = destination.path_lst[-1]
         path = destination.path_lst[:-1]
         parent = self.collection_model.objects.get_by_path(*path)
-        self.obj.move({self.collection_attribute: parent, 'name': name})
+        self.obj.move(**{self.collection_attribute: parent, 'name': name})
 
 
 class NameLookupDBDavResource(BaseDBDavResource):
@@ -131,7 +131,7 @@ class NameLookupDBDavResource(BaseDBDavResource):
             parent = self.get_model_by_path(self.collection_model, *self.path[:-1])
             try:
                 qs = self.object_model.objects.select_related(self.collection_attribute)
-                return qs.get({self.collection_attribute: parent, 'name': name})
+                return qs.get(**{self.collection_attribute: parent, 'name': name})
             except self.object_model.DoesNotExist:
                 pass
 
