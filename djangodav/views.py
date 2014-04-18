@@ -162,21 +162,20 @@ class WebDavView(View):
             if not acl.listing:
                 return HttpResponseForbidden()
             return render_to_response(self.template_name, {'res': self.resource, 'base_url': self.base_url})
+        if not acl.read:
+            return HttpResponseForbidden()
+        if head and self.resource.exists:
+            response = HttpResponse()
+        elif head:
+            response = HttpResponseNotFound()
         else:
-            if not acl.read:
-                return HttpResponseForbidden()
-            if head and self.resource.exists:
-                response = HttpResponse()
-            elif head:
-                response = HttpResponseNotFound()
-            else:
-                response = HttpResponse(self.resource.read())
-            if self.resource.exists:
-                response['Content-Type'] = mimetypes.guess_type(self.resource.displayname)[0]
-                response['Content-Length'] = self.resource.getcontentlength
-                response['Last-Modified'] = self.resource.getlastmodified
-                response['ETag'] = self.resource.getetag
-            response['Date'] = http_date()
+            response = HttpResponse(self.resource.read())
+        if self.resource.exists:
+            response['Content-Type'] = mimetypes.guess_type(self.resource.displayname)[0]
+            response['Content-Length'] = self.resource.getcontentlength
+            response['Last-Modified'] = self.resource.getlastmodified
+            response['ETag'] = self.resource.getetag
+        response['Date'] = http_date()
         return response
 
     def head(self, request, path, *args, **kwargs):
