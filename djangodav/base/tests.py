@@ -19,8 +19,46 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from django.test import TestCase
+from django.utils.timezone import now
 from djangodav.base.resource import BaseDavResource
-from mock import patch, Mock
+from mock import patch, Mock, MagicMock
+
+
+class MockResource(MagicMock, BaseDavResource):
+    exists = True
+    get_created = Mock(return_value=now)
+    get_modified = Mock(return_value=now)
+    getcontentlength = 0
+
+    def __init__(self, path, *args, **kwargs):
+        super(MockResource, self).__init__(spec=BaseDavResource, *args, **kwargs)
+        BaseDavResource.__init__(self, path)
+
+
+class MockObject(MockResource):
+    is_object = True
+    is_collection = False
+    getcontentlength = 42
+
+
+class MockCollection(MockResource):
+    is_object = False
+    is_collection = True
+
+
+class MissingMockResource(MockResource):
+    exists = False
+
+
+class MissingMockObject(MissingMockResource):
+    is_object = True
+    is_collection = False
+    getcontentlength = 42
+
+
+class MissingMockCollection(MissingMockResource):
+    is_object = False
+    is_collection = True
 
 
 class TestBaseDavResource(TestCase):
@@ -48,3 +86,55 @@ class TestBaseDavResource(TestCase):
 
     def test_displayname(self):
         self.assertEqual(self.resource.displayname, 'name')
+
+    def test_move_collection(self):
+        child = MockObject('/path/to/src/child', move=Mock())
+        src = MockCollection('/path/to/src/', get_children=Mock(return_value=[child]), delete=Mock())
+        dst = MissingMockCollection('/path/to/dst/', create_collection=Mock())
+
+        src.move(dst)
+
+        src.delete.assert_called_with()
+        dst.create_collection.assert_called_with()
+        self.assertEqual(child.move.call_args[0][0].path, ['path', 'to', 'dst', 'child'])
+
+    def test_move_collection_collision(self):
+        child = MockObject('/path/to/src/child', move=Mock())
+        src = MockCollection('/path/to/src/', get_children=Mock(return_value=[child]), delete=Mock())
+        dst = MockCollection('/path/to/dst/', create_collection=Mock())
+
+        src.move(dst)
+
+        src.delete.assert_called_with()
+        self.assertEqual(dst.create_collection.call_count, 0)
+        self.assertEqual(child.move.call_args[0][0].path, ['path', 'to', 'dst', 'child'])
+
+    def test_copy_collection(self):
+        child = MockObject('/path/to/src/child', copy=Mock())
+        src = MockCollection('/path/to/src/', get_children=Mock(return_value=[child]), delete=Mock())
+        dst = MissingMockCollection('/path/to/dst/', create_collection=Mock())
+
+        src.copy(dst)
+
+        dst.create_collection.assert_called_with()
+        self.assertEqual(child.copy.call_args[0][0].path, ['path', 'to', 'dst', 'child'])
+
+    def test_copy_collection_collision(self):
+        child = MockObject('/path/to/src/child', copy=Mock())
+        src = MockCollection('/path/to/src/', get_children=Mock(return_value=[child]), delete=Mock())
+        dst = MockCollection('/path/to/dst/', create_collection=Mock())
+
+        src.copy_collection(dst)
+
+        self.assertEqual(dst.create_collection.call_count, 0)
+        self.assertEqual(child.copy.call_args[0][0].path, ['path', 'to', 'dst', 'child'])
+
+    def test_copy_collection_depth_0(self):
+        child = MockObject('/path/to/src/child', copy=Mock())
+        src = MockCollection('/path/to/src/', get_children=Mock(return_value=[child]), delete=Mock())
+        dst = MissingMockCollection('/path/to/dst/', create_collection=Mock())
+
+        src.copy(dst, 0)
+
+        dst.create_collection.assert_called_with()
+        self.assertEqual(child.copy.call_count, 0)
