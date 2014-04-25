@@ -21,6 +21,7 @@
 from lxml.etree import ElementTree
 from django.http import HttpResponse, HttpRequest
 from djangodav.base.acl import FullAcl
+from djangodav.lock import DummyLock
 from djangodav.response import ResponseException
 from lxml import etree
 
@@ -414,3 +415,23 @@ class TestView(TestCase):
         resp = v.mkcol(request, path)
         self.assertFalse(self.sub_object.create_collection.called)
         self.assertEqual(405, resp.status_code)
+
+    def test_delete_exists(self):
+        target = self.sub_object
+        v = WebDavView(path=target.get_displaypath(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
+        v.__dict__['resource'] = target
+        request = HttpRequest()
+        target.delete = Mock()
+        resp = v.delete(request, target.get_displaypath())
+        self.assertTrue(target.delete.called)
+        self.assertEqual(204, resp.status_code)
+
+    def test_delete_missing(self):
+        target = self.missing_sub_object
+        v = WebDavView(path=target.get_displaypath(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
+        v.__dict__['resource'] = target
+        request = HttpRequest()
+        target.delete = Mock()
+        resp = v.delete(request, target.get_displaypath())
+        self.assertFalse(target.delete.called)
+        self.assertEqual(404, resp.status_code)
