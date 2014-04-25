@@ -268,8 +268,9 @@ class TestView(TestCase):
         self.assertRaises(ResponseException, v._allowed_methods)
 
     def test_options_root(self):
-        v = WebDavView(path='/')
-        resp = v.options(None, '/')
+        path = '/'
+        v = WebDavView(path=path)
+        resp = v.options(None, path)
         self.assertEqual(sorted(resp.items()), [
             ('Content-Length', '0'),
             ('Content-Type', 'text/html'),
@@ -277,9 +278,10 @@ class TestView(TestCase):
         ])
 
     def test_options_obj(self):
-        v = WebDavView(path='/obj', _allowed_methods=Mock(return_value=['ALL']))
-        v.__dict__['resource'] = MockObject('/path')
-        resp = v.options(None, '/path/')
+        path = '/obj/'
+        v = WebDavView(path=path, _allowed_methods=Mock(return_value=['ALL']))
+        v.__dict__['resource'] = MockObject(path)
+        resp = v.options(None, path)
         self.assertEqual(sorted(resp.items()), [
             ('Allow', 'ALL'),
             ('Allow-Ranges', 'bytes'),
@@ -289,9 +291,10 @@ class TestView(TestCase):
         ])
 
     def test_options_collection(self):
-        v = WebDavView(path='/obj', _allowed_methods=Mock(return_value=['ALL']))
-        v.__dict__['resource'] = MockCollection('/path/')
-        resp = v.options(None, '/path/')
+        path = '/collection/'
+        v = WebDavView(path=path, _allowed_methods=Mock(return_value=['ALL']))
+        v.__dict__['resource'] = MockCollection(path)
+        resp = v.options(None, path)
         self.assertEqual(sorted(resp.items()), [
             ('Allow', 'ALL'),
             ('Content-Length', '0'),
