@@ -18,11 +18,12 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
+from lxml.etree import ElementTree
 from lxml import etree
 
 from djangodav.base.tests.resource import MockCollection, MockObject, MissingMockCollection
 from djangodav.fs.tests import *
-from djangodav.utils import D
+from djangodav.utils import D, WEBDAV_NSMAP
 from djangodav.views import WebDavView
 from mock import Mock
 
@@ -34,7 +35,7 @@ class TestView(TestCase):
             get_descendants=Mock(return_value=[])
         )
         self.sub_object = MockObject(
-            path='/collection/sub_object/',
+            path='/collection/sub_object',
             getcontentlength=42,
             get_descendants=Mock(return_value=[])
         )
@@ -48,26 +49,31 @@ class TestView(TestCase):
         )
 
     def test_get_collection_redirect(self):
-        v = WebDavView(path='/collection/')
-        v.__dict__['resource'] = MockCollection('/collection/')
-        request = Mock(META={'SERVERNANE': 'testserver'}, build_absolute_uri=Mock(return_value='/collection'))
-        resp = v.get(request, '/collection', 'xbody')
+        actual_path = '/collection/'
+        wrong_path = '/collection'
+        v = WebDavView(path=wrong_path)
+        v.__dict__['resource'] = MockCollection(actual_path)
+        request = Mock(META={'SERVERNANE': 'testserver'}, build_absolute_uri=Mock(return_value=wrong_path))
+        resp = v.get(request, wrong_path, 'xbody')
         self.assertEqual(resp.status_code, 302)
-        self.assertEqual(resp['Location'], '/collection/')
+        self.assertEqual(actual_path, resp['Location'])
 
     def test_get_object_redirect(self):
-        r = WebDavView(path='/object.mp4')
-        r.__dict__['resource'] = MockObject("/object.mp4")
-        request = Mock(META={'SERVERNANE': 'testserver'}, build_absolute_uri=Mock(return_value='/object.mp4/'))
-        resp = r.get(request, '/object.mp4/', 'xbody')
+        actual_path = '/object.mp4'
+        wrong_path = '/object.mp4/'
+        r = WebDavView(path=wrong_path)
+        r.__dict__['resource'] = MockObject(actual_path)
+        request = Mock(META={'SERVERNANE': 'testserver'}, build_absolute_uri=Mock(return_value=wrong_path))
+        resp = r.get(request, wrong_path, 'xbody')
         self.assertEqual(resp.status_code, 302)
-        self.assertEqual(resp['Location'], '/object.mp4')
+        self.assertEqual(resp['Location'], actual_path)
 
-    def test_not_exists(self):
-        r = WebDavView(path='/object.mp4')
-        r.__dict__['resource'] = MissingMockCollection(path='/object.mp4')
-        request = Mock(META={'SERVERNANE': 'testserver'}, build_absolute_uri=Mock(return_value='/object.mp4/'))
-        resp = r.get(request, '/object.mp4/', 'xbody')
+    def test_missing(self):
+        path = '/object.mp4'
+        r = WebDavView(path=path)
+        r.__dict__['resource'] = MissingMockCollection(path)
+        request = Mock(META={'SERVERNANE': 'testserver'}, build_absolute_uri=Mock(return_value=path))
+        resp = r.get(request, path, 'xbody')
         self.assertEqual(resp.status_code, 404)
 
     def test_propfind_listing(self):
