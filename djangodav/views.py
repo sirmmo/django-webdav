@@ -58,6 +58,8 @@ class WebDavView(View):
             resp = e.response
         if not 'Allow' in resp:
             resp['Allow'] = ", ".join(self._allowed_methods())
+        if not 'Date' in resp:
+            resp['Date'] = rfc1123_date(now())
         if self.server_header:
             resp['Server'] = self.server_header
         return resp
@@ -65,7 +67,6 @@ class WebDavView(View):
     def options(self, request, path, *args, **kwargs):
         response = HttpResponse(content_type='text/html')
         response['DAV'] = '1,2'
-        response['Date'] = rfc1123_date()
         response['Content-Length'] = '0'
         if self.path in ('/', '*'):
             return response
@@ -177,7 +178,6 @@ class WebDavView(View):
             response['Content-Length'] = self.resource.getcontentlength
             response['Last-Modified'] = self.resource.getlastmodified
             response['ETag'] = self.resource.getetag
-        response['Date'] = http_date()
         return response
 
     def head(self, request, path, *args, **kwargs):
@@ -208,7 +208,6 @@ class WebDavView(View):
         self.lock_class(self.resource).del_locks()
         self.resource.delete()
         response = HttpResponseNoContent()
-        response['Date'] = http_date()
         self.__dict__['resource'] = self.resource_class(self.resource.get_path())
         return response
 
@@ -387,7 +386,6 @@ class WebDavView(View):
 
         body = D.multistatus(*responses)
         response = HttpResponseMultiStatus(etree.tostring(body, pretty_print=True))
-        response['Date'] = rfc1123_date(now())
         return response
 
     def proppatch(self, request, path, *args, **kwargs):
