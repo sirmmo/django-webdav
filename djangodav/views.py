@@ -174,7 +174,7 @@ class WebDavView(View):
         else:
             response = HttpResponse(self.resource.read())
         if self.resource.exists:
-            response['Content-Type'] = mimetypes.guess_type(self.resource.displayname)[0]
+            response['Content-Type'] = self.resource.content_type
             response['Content-Length'] = self.resource.getcontentlength
             response['Last-Modified'] = self.resource.getlastmodified
             response['ETag'] = self.resource.getetag

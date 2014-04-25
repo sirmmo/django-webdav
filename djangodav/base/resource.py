@@ -19,6 +19,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from hashlib import md5
+from mimetypes import guess_type
 
 from django.utils.http import urlquote
 from djangodav.utils import rfc3339_date, rfc1123_date, safe_join
@@ -152,6 +153,10 @@ class BaseDavResource(object):
     @property
     def is_collection(self):
         raise NotImplementedError()
+
+    @property
+    def content_type(self):
+        return guess_type(self.displayname)[0]
 
     @property
     def is_object(self):
