@@ -278,7 +278,7 @@ class TestView(TestCase):
         ])
 
     def test_options_obj(self):
-        path = '/obj/'
+        path = '/obj'
         v = WebDavView(path=path, _allowed_methods=Mock(return_value=['ALL']))
         v.__dict__['resource'] = MockObject(path)
         resp = v.options(None, path)
