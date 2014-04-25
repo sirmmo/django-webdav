@@ -160,6 +160,39 @@ class TestView(TestCase):
             ), pretty_print=True)
         )
 
+    def test_propfind_allprop(self):
+        self.sub_object.get_descendants.return_value += [self.sub_object]
+        request = Mock(META={})
+        path = 'collection/sub_object'
+        v = WebDavView(base_url='/base/', path=path, request=request)
+        v.__dict__['resource'] = self.sub_object
+        resp = v.propfind(request, path,
+            etree.XPathDocumentEvaluator(ElementTree(
+                D.propfind(
+                    D.allprop()
+                )
+            ), namespaces=WEBDAV_NSMAP)
+        )
+        self.assertEqual(resp.status_code, 207)
+        self.assertEqual(resp.content,
+            etree.tostring(D.multistatus(
+                D.response(
+                    D.href('/base/collection/sub_object'),
+                    D.propstat(
+                        D.prop(
+                            D.getcontentlength("42"),
+                            D.creationdate("1983-12-23T23:00:00Z"),
+                            D.getlastmodified("Wed, 24 Dec 2014 06:00:00 GMT"),
+                            D.resourcetype(),
+                            D.displayname("sub_object"),
+                        ),
+                        D.status("HTTP/1.1 200 OK")
+                    )
+                ),
+            ), pretty_print=True)
+        )
+
+
     def test_propfind_all_names(self):
         self.sub_object.get_descendants.return_value += [self.sub_object]
         request = Mock(META={})
