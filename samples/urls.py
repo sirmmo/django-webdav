@@ -18,6 +18,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
+from djangodav.base.acl import FullAcl
 from djangodav.lock import DummyLock
 
 from djangodav.views import WebDavView
@@ -30,7 +31,7 @@ from samples.db.resource import MyDBDavResource
 
 urlpatterns = patterns('',
     # Mirroring tmp folder
-    (r'^fs(?P<path>.*)$', WebDavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock)),
+    (r'^fs(?P<path>.*)$', WebDavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock, acl_class=FullAcl)),
     # Db file keeper
-    (r'^db(?P<path>.*)$', WebDavView.as_view(resource_class=MyDBDavResource, lock_class=DummyLock)),
+    (r'^db(?P<path>.*)$', WebDavView.as_view(resource_class=MyDBDavResource, lock_class=DummyLock, acl_class=FullAcl)),
 )
