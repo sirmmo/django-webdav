@@ -20,12 +20,13 @@
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from lxml.etree import ElementTree
 from django.http import HttpResponse, HttpRequest
+from django.utils.datetime_safe import datetime
 from djangodav.response import ResponseException
 from lxml import etree
 
 from djangodav.base.tests.resource import MockCollection, MockObject, MissingMockCollection
 from djangodav.fs.tests import *
-from djangodav.utils import D, WEBDAV_NSMAP
+from djangodav.utils import D, WEBDAV_NSMAP, rfc1123_date
 from djangodav.views import WebDavView
 from mock import Mock
 
@@ -265,3 +266,41 @@ class TestView(TestCase):
         parent = MissingMockCollection('/path/to/obj')
         v.__dict__['resource'] = MissingMockCollection('/path/', get_parent=Mock(return_value=parent))
         self.assertRaises(ResponseException, v._allowed_methods)
+
+    @patch('djangodav.views.rfc1123_date', Mock(return_value=rfc1123_date(datetime(1983, 12, 24))))
+    def test_options_root(self):
+        v = WebDavView(path='/')
+        resp = v.options(None, '/')
+        self.assertEqual(sorted(resp.items()), [
+            ('Content-Length', '0'),
+            ('Content-Type', 'text/html'),
+            ('DAV', '1,2'),
+            ('Date', 'Sat, 24 Dec 1983 06:00:00 GMT'),
+        ])
+
+    @patch('djangodav.views.rfc1123_date', Mock(return_value=rfc1123_date(datetime(1983, 12, 24))))
+    def test_options_obj(self):
+        v = WebDavView(path='/obj', _allowed_methods=Mock(return_value=['ALL']))
+        v.__dict__['resource'] = MockObject('/path')
+        resp = v.options(None, '/path/')
+        self.assertEqual(sorted(resp.items()), [
+            ('Allow', 'ALL'),
+            ('Allow-Ranges', 'bytes'),
+            ('Content-Length', '0'),
+            ('Content-Type', 'text/html'),
+            ('DAV', '1,2'),
+            ('Date', 'Sat, 24 Dec 1983 06:00:00 GMT'),
+        ])
+
+    @patch('djangodav.views.rfc1123_date', Mock(return_value=rfc1123_date(datetime(1983, 12, 24))))
+    def test_options_collection(self):
+        v = WebDavView(path='/obj', _allowed_methods=Mock(return_value=['ALL']))
+        v.__dict__['resource'] = MockCollection('/path/')
+        resp = v.options(None, '/path/')
+        self.assertEqual(sorted(resp.items()), [
+            ('Allow', 'ALL'),
+            ('Content-Length', '0'),
+            ('Content-Type', 'text/html'),
+            ('DAV', '1,2'),
+            ('Date', 'Sat, 24 Dec 1983 06:00:00 GMT'),
+        ])

@@ -1,12 +1,13 @@
 import mimetypes, urllib, urlparse, re
 from sys import version_info as python_version
+from django.utils.timezone import now
 from lxml import etree
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseNotAllowed, HttpResponseBadRequest, \
     HttpResponseNotModified, HttpResponseRedirect
 from django.utils.decorators import method_decorator
 from django.utils.functional import cached_property
-from django.utils.http import http_date, parse_etags
+from django.utils.http import parse_etags
 from django.shortcuts import render_to_response
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
@@ -15,7 +16,7 @@ from djangodav.base.acl import DavAcl
 from djangodav.response import ResponseException, HttpResponsePreconditionFailed, HttpResponseCreated, HttpResponseNoContent, \
     HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, HttpResponseNotImplemented, \
     HttpResponseMultiStatus, HttpResponseLocked
-from djangodav.utils import WEBDAV_NSMAP, D, url_join, get_property_tag_list
+from djangodav.utils import WEBDAV_NSMAP, D, url_join, get_property_tag_list, rfc1123_date
 from djangodav import VERSION as djangodav_version
 from django import VERSION as django_version, get_version
 
@@ -64,7 +65,7 @@ class WebDavView(View):
     def options(self, request, path, *args, **kwargs):
         response = HttpResponse(content_type='text/html')
         response['DAV'] = '1,2'
-        response['Date'] = http_date()
+        response['Date'] = rfc1123_date()
         response['Content-Length'] = '0'
         if self.path in ('/', '*'):
             return response
@@ -386,7 +387,7 @@ class WebDavView(View):
 
         body = D.multistatus(*responses)
         response = HttpResponseMultiStatus(etree.tostring(body, pretty_print=True))
-        response['Date'] = http_date()
+        response['Date'] = rfc1123_date(now())
         return response
 
     def proppatch(self, request, path, *args, **kwargs):
