@@ -57,7 +57,10 @@ class WebDavView(View):
         except ResponseException, e:
             resp = e.response
         if not 'Allow' in resp:
-            resp['Allow'] = ", ".join(self._allowed_methods())
+            methods = self._allowed_methods()
+            if not methods:
+                return HttpResponseForbidden()
+            resp['Allow'] = ", ".join(methods)
         if not 'Date' in resp:
             resp['Date'] = rfc1123_date(now())
         if self.server_header:
@@ -80,7 +83,7 @@ class WebDavView(View):
         if not self.resource.exists:
             res = self.resource.get_parent()
             if not (res.is_collection and res.exists):
-                raise ResponseException(HttpResponseNotFound())
+                return None
             return allowed + ['PUT', 'MKCOL']
         allowed += ['HEAD', 'GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK']
         if self.resource.is_object:

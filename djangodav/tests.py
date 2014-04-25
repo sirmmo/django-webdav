@@ -265,7 +265,7 @@ class TestView(TestCase):
         v = WebDavView()
         parent = MissingMockCollection('/path/to/obj')
         v.__dict__['resource'] = MissingMockCollection('/path/', get_parent=Mock(return_value=parent))
-        self.assertRaises(ResponseException, v._allowed_methods)
+        self.assertEqual(v._allowed_methods(), None)
 
     def test_options_root(self):
         path = '/'
