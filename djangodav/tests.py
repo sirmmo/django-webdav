@@ -18,10 +18,11 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
-
+from lxml import etree
 
 from djangodav.base.tests.resource import MockCollection, MockObject, MissingMockCollection
 from djangodav.fs.tests import *
+from djangodav.utils import D
 from djangodav.views import WebDavView
 from mock import Mock
 
@@ -76,3 +77,33 @@ class TestView(TestCase):
         v.request = request
         resp = v.propfind(request, '/collection/', None)
         self.assertEqual(resp.status_code, 207)
+        self.assertEqual(resp.content,
+            etree.tostring(D.multistatus(
+                D.response(
+                    D.href('/base/collection/sub_object'),
+                    D.propstat(
+                        D.prop(
+                            D.getcontentlength("42"),
+                            D.creationdate("1983-12-23T23:00:00Z"),
+                            D.getlastmodified("Wed, 24 Dec 2014 06:00:00 GMT"),
+                            D.resourcetype(),
+                            D.displayname("sub_object"),
+                        ),
+                        D.status("HTTP/1.1 200 OK")
+                    )
+                ),
+                D.response(
+                    D.href('/base/collection/sub_colection/'),
+                    D.propstat(
+                        D.prop(
+                            D.getcontentlength("0"),
+                            D.creationdate("1983-12-23T23:00:00Z"),
+                            D.getlastmodified("Wed, 24 Dec 2014 06:00:00 GMT"),
+                            D.resourcetype(D.collection()),
+                            D.displayname("sub_colection"),
+                        ),
+                        D.status("HTTP/1.1 200 OK")
+                    )
+                )
+            ), pretty_print=True)
+        )

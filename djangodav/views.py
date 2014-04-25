@@ -365,7 +365,7 @@ class WebDavView(View):
                         D.prop(*[
                             D(name) for name in get_prop_names if child.ALL_PROPS
                         ]),
-                        D.status(text='HTTP/1.1 200 OK'),
+                        D.status('HTTP/1.1 200 OK'),
                     ),
                 )
                 for child in children
@@ -378,7 +378,7 @@ class WebDavView(View):
                         D.prop(
                             *get_property_tag_list(child, *(get_prop if get_prop else child.ALL_PROPS))
                         ),
-                        D.status(text='HTTP/1.1 200 OK'),
+                        D.status('HTTP/1.1 200 OK'),
                     ),
                 )
                 for child in children
