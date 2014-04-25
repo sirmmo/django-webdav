@@ -12,7 +12,6 @@ from django.shortcuts import render_to_response
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
-from djangodav.base.acl import DavAcl
 from djangodav.response import ResponseException, HttpResponsePreconditionFailed, HttpResponseCreated, HttpResponseNoContent, \
     HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, HttpResponseNotImplemented, \
     HttpResponseMultiStatus, HttpResponseLocked
@@ -68,6 +67,8 @@ class WebDavView(View):
         return resp
 
     def options(self, request, path, *args, **kwargs):
+        if not self.has_access(self.resource, 'read'):
+            return HttpResponseForbidden()
         response = HttpResponse(content_type='text/html')
         response['DAV'] = '1,2'
         response['Content-Length'] = '0'
@@ -90,11 +91,14 @@ class WebDavView(View):
             allowed += ['PUT']
         return allowed
 
-    def get_access(self, path):
+    def get_access(self, resource):
         """Return permission as DavAcl object. A DavACL should have the following attributes:
         read, write, delete, create, relocate, list. By default we implement a read-only
         system."""
-        return self.acl_class(listing=True, read=True, full=False)
+        return self.acl_class(read=True, full=False)
+
+    def has_access(self, resource, method):
+        return getattr(self.get_access(resource), method)
 
     def get_resource_kwargs(self, **kwargs):
         return kwargs
@@ -157,7 +161,6 @@ class WebDavView(View):
             #for (tmpurl, url, tmpcontent, content) in PATTERN_IF_DELIMITER.findall(cond_if):
 
     def get(self, request, path, head=False, *args, **kwargs):
-        acl = self.get_access(self.path)
         if not self.resource.exists:
             return HttpResponseNotFound()
         if not path.endswith("/") and self.resource.is_collection:
@@ -166,6 +169,7 @@ class WebDavView(View):
             return HttpResponseRedirect(request.build_absolute_uri().rstrip("/"))
         response = HttpResponse()
         response['Content-Length'] = 0
+        acl = self.get_access(self.resource)
         if self.resource.is_object:
             if not acl.read:
                 return HttpResponseForbidden()
@@ -175,7 +179,7 @@ class WebDavView(View):
             response['Content-Type'] = self.resource.content_type
             response['ETag'] = self.resource.getetag
         else:
-            if not acl.listing:
+            if not acl.read:
                 return HttpResponseForbidden()
             if not head:
                 response = render_to_response(self.template_name, {'res': self.resource, 'base_url': self.base_url})
@@ -190,8 +194,7 @@ class WebDavView(View):
             return HttpResponseNotAllowed(self._allowed_methods())
         if not self.resource.get_parent().exists:
             return HttpResponseNotFound()
-        acl = self.get_access(self.path)
-        if not acl.write:
+        if not self.has_access(self.resource, 'write'):
             return HttpResponseForbidden()
         created = not self.resource.exists
         self.resource.write(self.request.body)
@@ -204,8 +207,7 @@ class WebDavView(View):
     def delete(self, request, path, *args, **kwargs):
         if not self.resource.exists:
             return HttpResponseNotFound()
-        acl = self.get_access(self.path)
-        if not acl.delete:
+        if not self.has_access(self.resource, 'delete'):
             return HttpResponseForbidden()
         self.lock_class(self.resource).del_locks()
         self.resource.delete()
@@ -221,8 +223,7 @@ class WebDavView(View):
         length = self.request.META.get('CONTENT_LENGTH', 0)
         if length and int(length) != 0:
             return HttpResponseMediatypeNotSupported()
-        acl = self.get_access(self.path)
-        if not acl.create:
+        if not self.has_access(self.resource, 'write'):
             return HttpResponseForbidden()
         self.resource.create_collection()
         self.__dict__['resource'] = self.resource_class(self.resource.get_path())
@@ -231,8 +232,7 @@ class WebDavView(View):
     def copy(self, request, path, move=False, *args, **kwargs):
         if not self.resource.exists:
             return HttpResponseNotFound()
-        acl = self.get_access(self.path)
-        if not acl.relocate:
+        if not self.has_access(self.resource, 'read'):
             return HttpResponseForbidden()
         dst = urllib.unquote(request.META.get('HTTP_DESTINATION', ''))
         if not dst:
@@ -245,6 +245,8 @@ class WebDavView(View):
         dst = self.resource_class(dparts.path[len(self.base_url):])
         if not dst.get_parent().exists:
             return HttpResponseConflict()
+        if not self.has_access(self.resource, 'write'):
+            return HttpResponseForbidden()
         overwrite = self.request.META.get('HTTP_OVERWRITE', 'T')
         if overwrite not in ('T', 'F'):
             return HttpResponseBadRequest('Overwrite header must be T or F.')
@@ -276,10 +278,14 @@ class WebDavView(View):
         return response
 
     def move(self, request, path, *args, **kwargs):
+        if not self.has_access(self.resource, 'delete'):
+            return HttpResponseForbidden()
         return self.copy(request, path, move=True, *args, **kwargs)
 
     def lock(self, request, path, xbody=None, *args, **kwargs):
         # TODO Lock refreshing
+        if not self.has_access(self.resource, 'write'):
+            return HttpResponseForbidden()
 
         if not xbody:
             return HttpResponseBadRequest('Lockinfo required')
@@ -335,6 +341,9 @@ class WebDavView(View):
         return HttpResponse(etree.tostring(body, pretty_print=True), content_type='application/xml')
 
     def unlock(self, request, path, xbody=None, *args, **kwargss):
+        if not self.has_access(self.resource, 'write'):
+            return HttpResponseForbidden()
+
         token = request.META.get('HTTP_LOCK_TOKEN')
         if not token:
             return HttpResponseBadRequest('Lock token required')
@@ -343,10 +352,13 @@ class WebDavView(View):
         return HttpResponseNoContent()
 
     def propfind(self, request, path, xbody=None, *args, **kwargs):
+        if not self.has_access(self.resource, 'read'):
+            return HttpResponseForbidden()
+
         if not self.resource.exists:
             return HttpResponseNotFound()
 
-        if not self.get_access(self.path):
+        if not self.get_access(self.resource):
             return HttpResponseForbidden()
 
         get_all_props, get_prop, get_prop_names = True, False, False
@@ -393,6 +405,9 @@ class WebDavView(View):
     def proppatch(self, request, path, *args, **kwargs):
         if not self.resource.exists:
             return HttpResponseNotFound()
+        if not self.has_access(self.resource, 'write'):
+            return HttpResponseForbidden()
         depth = self.get_depth(default="0")
         if depth != 0:
             return HttpResponseBadRequest('Invalid depth header value %s' % depth)
+        return HttpResponseNotImplemented()
