@@ -219,11 +219,11 @@ class WebDavView(View):
         return response
 
     def mkcol(self, request, path, *args, **kwargs):
-        if self.resource.is_collection and self.resource.exists:
+        if self.resource.exists:
             return HttpResponseNotAllowed(self._allowed_methods())
         if not self.resource.get_parent().exists:
             return HttpResponseConflict()
-        length = self.request.META.get('CONTENT_LENGTH', 0)
+        length = request.META.get('CONTENT_LENGTH', 0)
         if length and int(length) != 0:
             return HttpResponseMediatypeNotSupported()
         if not self.has_access(self.resource, 'write'):

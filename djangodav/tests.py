@@ -49,6 +49,11 @@ class TestView(TestCase):
             get_descendants=Mock(return_value=[]),
             get_parent=lambda: self.top_collection
         )
+        self.missing_sub_collection = MissingMockCollection(
+            path='/collection/missing_sub_collection',
+            get_descendants=Mock(return_value=[]),
+            get_parent=lambda: self.top_collection
+        )
         self.sub_collection = MockCollection(
             path='/collection/sub_colection/',
             get_descendants=Mock(return_value=[]),
@@ -351,7 +356,7 @@ class TestView(TestCase):
         self.assertEqual("0", resp['Content-Length'])
 
     def test_put_new(self):
-        path = '/object.txt'
+        path = '/collection/missing_sub_object'
         v = WebDavView(path=path, acl_class=FullAcl, resource_class=Mock())
         v.__dict__['resource'] = self.missing_sub_object
         self.missing_sub_object.write = Mock()
@@ -361,7 +366,7 @@ class TestView(TestCase):
         self.assertEqual(201, resp.status_code)
 
     def test_put_exists(self):
-        path = '/object.txt'
+        path = '/collection/missing_sub_object'
         v = WebDavView(path=path, acl_class=FullAcl, resource_class=Mock())
         v.__dict__['resource'] = self.sub_object
         self.sub_object.write = Mock()
@@ -371,7 +376,7 @@ class TestView(TestCase):
         self.assertEqual(204, resp.status_code)
 
     def test_put_collection(self):
-        path = '/object.txt'
+        path = '/collection/missing_sub_object'
         v = WebDavView(path=path, acl_class=FullAcl, resource_class=Mock())
         v.__dict__['resource'] = self.sub_collection
         self.sub_collection.write = Mock()
@@ -379,3 +384,33 @@ class TestView(TestCase):
         resp = v.put(request, path)
         self.assertFalse(self.sub_collection.write.called)
         self.assertEqual(403, resp.status_code)
+
+    def test_mkcol_new(self):
+        path = '/collection/missing_sub_collection'
+        v = WebDavView(path=path, acl_class=FullAcl, resource_class=Mock())
+        v.__dict__['resource'] = self.missing_sub_collection
+        self.missing_sub_collection.create_collection = Mock()
+        request = HttpRequest()
+        resp = v.mkcol(request, path)
+        self.missing_sub_collection.create_collection.assert_called_with()
+        self.assertEqual(201, resp.status_code)
+
+    def test_mkcol_exists(self):
+        path = '/collection/sub_collection'
+        v = WebDavView(path=path, acl_class=FullAcl, resource_class=Mock())
+        v.__dict__['resource'] = self.sub_collection
+        self.sub_collection.create_collection = Mock()
+        request = HttpRequest()
+        resp = v.mkcol(request, path)
+        self.assertFalse(self.sub_collection.create_collection.called)
+        self.assertEqual(405, resp.status_code)
+
+    def test_mkcol_object(self):
+        path = '/collection/sub_object'
+        v = WebDavView(path=path, acl_class=FullAcl, resource_class=Mock())
+        v.__dict__['resource'] = self.sub_object
+        self.sub_object.create_collection = Mock()
+        request = HttpRequest()
+        resp = v.mkcol(request, path)
+        self.assertFalse(self.sub_object.create_collection.called)
+        self.assertEqual(405, resp.status_code)
