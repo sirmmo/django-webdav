@@ -161,23 +161,22 @@ class WebDavView(View):
             return HttpResponseRedirect(request.build_absolute_uri() + "/")
         if path.endswith("/") and self.resource.is_object:
             return HttpResponseRedirect(request.build_absolute_uri().rstrip("/"))
-        if not head and self.resource.is_collection:
+        response = HttpResponse()
+        response['Content-Length'] = 0
+        if self.resource.is_object:
+            if not acl.read:
+                return HttpResponseForbidden()
+            if not head:
+                response['Content-Length'] = self.resource.getcontentlength
+                response.content = self.resource.read()
+            response['Content-Type'] = self.resource.content_type
+            response['ETag'] = self.resource.getetag
+        else:
             if not acl.listing:
                 return HttpResponseForbidden()
-            return render_to_response(self.template_name, {'res': self.resource, 'base_url': self.base_url})
-        if not acl.read:
-            return HttpResponseForbidden()
-        if head and self.resource.exists:
-            response = HttpResponse()
-        elif head:
-            response = HttpResponseNotFound()
-        else:
-            response = HttpResponse(self.resource.read())
-        if self.resource.exists:
-            response['Content-Type'] = self.resource.content_type
-            response['Content-Length'] = self.resource.getcontentlength
-            response['Last-Modified'] = self.resource.getlastmodified
-            response['ETag'] = self.resource.getetag
+            if not head:
+                response = render_to_response(self.template_name, {'res': self.resource, 'base_url': self.base_url})
+        response['Last-Modified'] = self.resource.getlastmodified
         return response
 
     def head(self, request, path, *args, **kwargs):

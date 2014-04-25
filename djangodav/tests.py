@@ -301,3 +301,42 @@ class TestView(TestCase):
             ('Content-Type', 'text/html'),
             ('DAV', '1,2'),
         ])
+
+    def test_get_obj(self):
+        path = '/obj.txt'
+        v = WebDavView(path=path, _allowed_methods=Mock(return_value=['ALL']))
+        v.__dict__['resource'] = MockObject(path, read=Mock(return_value="C" * 42))
+        resp = v.get(None, path)
+        self.assertEqual(resp['Etag'], "0" * 40)
+        self.assertEqual(resp['Content-Type'], "text/plain")
+        self.assertEqual(resp['Last-Modified'], "Wed, 24 Dec 2014 06:00:00 GMT")
+        self.assertEqual(resp.content, "C" * 42)
+
+    @patch('djangodav.views.render_to_response', Mock(return_value=HttpResponse('listing')))
+    def test_head_object(self):
+        path = '/object.txt'
+        v = WebDavView(path=path, base_url='/base', _allowed_methods=Mock(return_value=['ALL']))
+        v.__dict__['resource'] = MockObject(path)
+        resp = v.head(None, path)
+        self.assertEqual("text/plain", resp['Content-Type'])
+        self.assertEqual("Wed, 24 Dec 2014 06:00:00 GMT", resp['Last-Modified'])
+        self.assertEqual("", resp.content)
+        self.assertEqual("0", resp['Content-Length'])
+
+    @patch('djangodav.views.render_to_response', Mock(return_value=HttpResponse('listing')))
+    def test_get_collection(self):
+        path = '/collection/'
+        v = WebDavView(path=path, base_url='/base', _allowed_methods=Mock(return_value=['ALL']))
+        v.__dict__['resource'] = MockCollection(path)
+        resp = v.get(None, path)
+        self.assertEqual("listing", resp.content)
+        self.assertEqual("Wed, 24 Dec 2014 06:00:00 GMT", resp['Last-Modified'])
+
+    def test_head_collection(self):
+        path = '/collection/'
+        v = WebDavView(path=path, base_url='/base', _allowed_methods=Mock(return_value=['ALL']))
+        v.__dict__['resource'] = MockCollection(path)
+        resp = v.head(None, path)
+        self.assertEqual("", resp.content)
+        self.assertEqual("Wed, 24 Dec 2014 06:00:00 GMT", resp['Last-Modified'])
+        self.assertEqual("0", resp['Content-Length'])
