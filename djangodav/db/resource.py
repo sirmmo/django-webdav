@@ -36,7 +36,6 @@ class BaseDBDavResource(BaseDavResource):
     modified_attribute = 'modified'
     name_attribute = 'name'
     size_attribute = 'size'
-    is_root = False
 
     def __init__(self, path, **kwargs):
         if 'obj' in kwargs:  # Accepting ready object to reduce db requests
@@ -68,10 +67,6 @@ class BaseDBDavResource(BaseDavResource):
     @cached_property
     def exists(self):
         return self.is_root or self.obj
-
-    @cached_property
-    def is_root(self):
-        return not bool(self.path)
 
     def get_children(self):
         """Return an iterator of all direct children of this resource."""

@@ -52,6 +52,10 @@ class BaseDavResource(object):
             return None
         return self.path[-1]
 
+    @property
+    def is_root(self):
+        return not bool(self.path)
+
     def get_parent_path(self):
         path = self.path[:-1]
         return "/" + "/".join(path) + "/" if path else ""
