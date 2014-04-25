@@ -24,7 +24,7 @@ from djangodav.base.acl import FullAcl
 from djangodav.response import ResponseException
 from lxml import etree
 
-from djangodav.base.tests.resource import MockCollection, MockObject, MissingMockCollection
+from djangodav.base.tests.resource import MockCollection, MockObject, MissingMockCollection, MissingMockObject
 from djangodav.fs.tests import *
 from djangodav.utils import D, WEBDAV_NSMAP, rfc1123_date
 from djangodav.views import WebDavView
@@ -35,16 +35,24 @@ class TestView(TestCase):
     def setUp(self):
         self.blank_collection = MockCollection(
             path='/blank_collection/',
-            get_descendants=Mock(return_value=[])
+            get_descendants=Mock(return_value=[]),
         )
         self.sub_object = MockObject(
             path='/collection/sub_object',
             getcontentlength=42,
-            get_descendants=Mock(return_value=[])
+            get_descendants=Mock(return_value=[]),
+            get_parent=lambda: self.top_collection
+        )
+        self.missing_sub_object = MissingMockObject(
+            path='/collection/missing_sub_object',
+            getcontentlength=42,
+            get_descendants=Mock(return_value=[]),
+            get_parent=lambda: self.top_collection
         )
         self.sub_collection = MockCollection(
             path='/collection/sub_colection/',
-            get_descendants=Mock(return_value=[])
+            get_descendants=Mock(return_value=[]),
+            get_parent=lambda: self.top_collection
         )
         self.top_collection = MockCollection(
             path='/collection/',
@@ -341,3 +349,33 @@ class TestView(TestCase):
         self.assertEqual("", resp.content)
         self.assertEqual("Wed, 24 Dec 2014 06:00:00 GMT", resp['Last-Modified'])
         self.assertEqual("0", resp['Content-Length'])
+
+    def test_put_new(self):
+        path = '/object.txt'
+        v = WebDavView(path=path, acl_class=FullAcl, resource_class=Mock())
+        v.__dict__['resource'] = self.missing_sub_object
+        self.missing_sub_object.write = Mock()
+        request = HttpRequest()
+        resp = v.put(request, path)
+        self.missing_sub_object.write.assert_called_with(request)
+        self.assertEqual(201, resp.status_code)
+
+    def test_put_exists(self):
+        path = '/object.txt'
+        v = WebDavView(path=path, acl_class=FullAcl, resource_class=Mock())
+        v.__dict__['resource'] = self.sub_object
+        self.sub_object.write = Mock()
+        request = HttpRequest()
+        resp = v.put(request, path)
+        self.sub_object.write.assert_called_with(request)
+        self.assertEqual(204, resp.status_code)
+
+    def test_put_collection(self):
+        path = '/object.txt'
+        v = WebDavView(path=path, acl_class=FullAcl, resource_class=Mock())
+        v.__dict__['resource'] = self.sub_collection
+        self.sub_collection.write = Mock()
+        request = HttpRequest()
+        resp = v.put(request, path)
+        self.assertFalse(self.sub_collection.write.called)
+        self.assertEqual(403, resp.status_code)

@@ -190,14 +190,17 @@ class WebDavView(View):
         return self.get(request, path, head=True, *args, **kwargs)
 
     def put(self, request, path, *args, **kwargs):
-        if self.resource.is_collection:
-            return HttpResponseNotAllowed(self._allowed_methods())
-        if not self.resource.get_parent().exists:
+        parent = self.resource.get_parent()
+        if not parent.exists:
             return HttpResponseNotFound()
-        if not self.has_access(self.resource, 'write'):
+        if self.resource.is_collection:
+            return HttpResponseForbidden()
+        if not self.resource.exists and not self.has_access(parent, 'write'):
+                return HttpResponseForbidden()
+        if self.resource.exists and not self.has_access(self.resource, 'write'):
             return HttpResponseForbidden()
         created = not self.resource.exists
-        self.resource.write(self.request.body)
+        self.resource.write(request)
         if created:
             self.__dict__['resource'] = self.resource_class(self.resource.get_path())
             return HttpResponseCreated()
