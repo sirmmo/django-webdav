@@ -77,8 +77,8 @@ class WebDavView(View):
         allowed = ['OPTIONS']
         if not self.resource.exists:
             res = self.resource.get_parent()
-            if not res.is_collection:
-                return HttpResponseNotFound()
+            if not (res.is_collection and res.exists):
+                raise ResponseException(HttpResponseNotFound())
             return allowed + ['PUT', 'MKCOL']
         allowed += ['HEAD', 'GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK']
         if self.resource.is_object:

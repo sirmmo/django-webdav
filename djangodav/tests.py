@@ -20,6 +20,7 @@
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from lxml.etree import ElementTree
 from django.http import HttpResponse, HttpRequest
+from djangodav.response import ResponseException
 from lxml import etree
 
 from djangodav.base.tests.resource import MockCollection, MockObject, MissingMockCollection
@@ -242,3 +243,25 @@ class TestView(TestCase):
         self.assertIsNotNone(v.xbody)
         self.assertEqual(v.base_url, '/base')
         self.assertEqual(v.path, '/path/')
+
+    def test_allowed_object(self):
+        v = WebDavView()
+        v.__dict__['resource'] = self.sub_object
+        self.assertEqual(v._allowed_methods(), ['OPTIONS', 'HEAD', 'GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK', 'PUT'])
+
+    def test_allowed_collection(self):
+        v = WebDavView()
+        v.__dict__['resource'] = self.top_collection
+        self.assertEqual(v._allowed_methods(), ['OPTIONS', 'HEAD', 'GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK'])
+
+    def test_allowed_missing_collection(self):
+        v = WebDavView()
+        parent = MockCollection('/path/to/obj')
+        v.__dict__['resource'] = MissingMockCollection('/path/', get_parent=Mock(return_value=parent))
+        self.assertEqual(v._allowed_methods(), ['OPTIONS', 'PUT', 'MKCOL'])
+
+    def test_allowed_missing_parent(self):
+        v = WebDavView()
+        parent = MissingMockCollection('/path/to/obj')
+        v.__dict__['resource'] = MissingMockCollection('/path/', get_parent=Mock(return_value=parent))
+        self.assertRaises(ResponseException, v._allowed_methods)
