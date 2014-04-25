@@ -70,11 +70,10 @@ class TestView(TestCase):
         resp = r.get(request, '/object.mp4/', 'xbody')
         self.assertEqual(resp.status_code, 404)
 
-    def test_propfind(self):
+    def test_propfind_listing(self):
         request = Mock(META={})
         v = WebDavView(base_url='/base/', path='/object.mp4/', request=request)
         v.__dict__['resource'] = self.top_collection
-        v.request = request
         resp = v.propfind(request, '/collection/', None)
         self.assertEqual(resp.status_code, 207)
         self.assertEqual(resp.content,
