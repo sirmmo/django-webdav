@@ -26,7 +26,7 @@ PATTERN_IF_DELIMITER = re.compile(r'(<([^>]+)>)|(\(([^\)]+)\))')
 class WebDavView(View):
     resource_class = None
     lock_class = None
-    acl_class = DavAcl
+    acl_class = None
     template_name = 'djangodav/index.html'
     http_method_names = ['options', 'put', 'mkcol', 'head', 'get', 'delete', 'propfind', 'proppatch', 'copy', 'move', 'lock', 'unlock']
     server_header = 'DjangoDav/%s Django/%s Python/%s' % (
