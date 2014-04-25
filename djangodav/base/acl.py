@@ -38,3 +38,8 @@ class DavAcl(object):
 class ReadOnlyAcl(DavAcl):
     def __init__(self, read=True, write=False, delete=False, create=False, relocate=False, listing=True, full=None):
         super(ReadOnlyAcl, self).__init__(read, write, delete, create, relocate, listing, full)
+
+
+class FullAcl(DavAcl):
+    def __init__(self, read=True, write=True, delete=True, create=True, relocate=True, listing=True, full=None):
+        super(FullAcl, self).__init__(full)
