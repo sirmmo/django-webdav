@@ -42,4 +42,4 @@ class ReadOnlyAcl(DavAcl):
 
 class FullAcl(DavAcl):
     def __init__(self, read=True, write=True, delete=True, create=True, relocate=True, listing=True, full=None):
-        super(FullAcl, self).__init__(full)
+        super(FullAcl, self).__init__(read, write, delete, create, relocate, listing, full)
