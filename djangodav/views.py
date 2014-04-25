@@ -363,7 +363,7 @@ class WebDavView(View):
                     D.href(url_join(self.base_url, child.get_path())),
                     D.propstat(
                         D.prop(*[
-                            D(name) for name in get_prop_names if child.ALL_PROPS
+                            D(name) for name in child.ALL_PROPS
                         ]),
                         D.status('HTTP/1.1 200 OK'),
                     ),
