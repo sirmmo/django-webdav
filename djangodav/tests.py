@@ -267,7 +267,6 @@ class TestView(TestCase):
         v.__dict__['resource'] = MissingMockCollection('/path/', get_parent=Mock(return_value=parent))
         self.assertRaises(ResponseException, v._allowed_methods)
 
-    @patch('djangodav.views.rfc1123_date', Mock(return_value=rfc1123_date(datetime(1983, 12, 24))))
     def test_options_root(self):
         v = WebDavView(path='/')
         resp = v.options(None, '/')
@@ -275,10 +274,8 @@ class TestView(TestCase):
             ('Content-Length', '0'),
             ('Content-Type', 'text/html'),
             ('DAV', '1,2'),
-            ('Date', 'Sat, 24 Dec 1983 06:00:00 GMT'),
         ])
 
-    @patch('djangodav.views.rfc1123_date', Mock(return_value=rfc1123_date(datetime(1983, 12, 24))))
     def test_options_obj(self):
         v = WebDavView(path='/obj', _allowed_methods=Mock(return_value=['ALL']))
         v.__dict__['resource'] = MockObject('/path')
@@ -289,10 +286,8 @@ class TestView(TestCase):
             ('Content-Length', '0'),
             ('Content-Type', 'text/html'),
             ('DAV', '1,2'),
-            ('Date', 'Sat, 24 Dec 1983 06:00:00 GMT'),
         ])
 
-    @patch('djangodav.views.rfc1123_date', Mock(return_value=rfc1123_date(datetime(1983, 12, 24))))
     def test_options_collection(self):
         v = WebDavView(path='/obj', _allowed_methods=Mock(return_value=['ALL']))
         v.__dict__['resource'] = MockCollection('/path/')
@@ -302,5 +297,4 @@ class TestView(TestCase):
             ('Content-Length', '0'),
             ('Content-Type', 'text/html'),
             ('DAV', '1,2'),
-            ('Date', 'Sat, 24 Dec 1983 06:00:00 GMT'),
         ])
