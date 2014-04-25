@@ -40,8 +40,9 @@ class WebDavView(View):
         self.base_url = request.META['PATH_INFO'][:-len(self.path)]
 
         meta = request.META.get
+        self.xbody = kwargs['xbody'] = None
         if meta('CONTENT_TYPE', '').startswith('text/xml') and int(meta('CONTENT_LENGTH', 0)) > 0:
-            kwargs['xbody'] = etree.XPathDocumentEvaluator(
+            self.xbody = kwargs['xbody'] = etree.XPathDocumentEvaluator(
                 etree.parse(request, etree.XMLParser(ns_clean=True)),
                 namespaces=WEBDAV_NSMAP
             )

@@ -19,6 +19,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from lxml.etree import ElementTree
+from django.http import HttpResponse, HttpRequest
 from lxml import etree
 
 from djangodav.base.tests.resource import MockCollection, MockObject, MissingMockCollection
@@ -224,3 +225,20 @@ class TestView(TestCase):
                 ),
             ), pretty_print=True)
         )
+
+    def test_dispatch(self):
+        request = Mock(
+            spec=HttpRequest,
+            META={
+                'PATH_INFO': '/base/path/',
+                'CONTENT_TYPE': 'text/xml',
+                'CONTENT_LENGTH': '44'
+            },
+            method='GET',
+            read=Mock(side_effect=[u"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n", u"<foo/>", u""])
+        )
+        v = WebDavView(request=request, get=Mock(return_value=HttpResponse()), _allowed_methods=Mock(return_value=['GET']))
+        v.dispatch(request, '/path/')
+        self.assertIsNotNone(v.xbody)
+        self.assertEqual(v.base_url, '/base')
+        self.assertEqual(v.path, '/path/')
