@@ -33,3 +33,8 @@ class DavAcl(object):
         self.create = create
         self.relocate = relocate
         self.listing = listing
+
+
+class ReadOnlyAcl(DavAcl):
+    def __init__(self, read=True, write=False, delete=False, create=False, relocate=False, listing=True, full=None):
+        super(ReadOnlyAcl, self).__init__(read, write, delete, create, relocate, listing, full)
