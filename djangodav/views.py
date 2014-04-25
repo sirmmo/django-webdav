@@ -235,7 +235,6 @@ class WebDavView(View):
         if not dst:
             return HttpResponseBadRequest('Destination header missing.')
         dparts = urlparse.urlparse(dst)
-        # TODO: ensure host and scheme portion matches ours...
         sparts = urlparse.urlparse(self.request.build_absolute_uri())
         if sparts.scheme != dparts.scheme or sparts.netloc != dparts.netloc:
             return HttpResponseBadGateway('Source and destination must have the same scheme and host.')
