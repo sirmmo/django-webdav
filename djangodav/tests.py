@@ -77,10 +77,12 @@ class TestView(TestCase):
         self.assertEqual(resp.status_code, 404)
 
     def test_propfind_listing(self):
+        self.top_collection.get_descendants.return_value += [self.top_collection]
         request = Mock(META={})
-        v = WebDavView(base_url='/base/', path='/object.mp4/', request=request)
+        path = '/collection/'
+        v = WebDavView(base_url='/base/', path=path, request=request)
         v.__dict__['resource'] = self.top_collection
-        resp = v.propfind(request, '/collection/', None)
+        resp = v.propfind(request, path, None)
         self.assertEqual(resp.status_code, 207)
         self.assertEqual(resp.content,
             etree.tostring(D.multistatus(
@@ -109,6 +111,19 @@ class TestView(TestCase):
                         ),
                         D.status("HTTP/1.1 200 OK")
                     )
-                )
+                ),
+                D.response(
+                    D.href('/base/collection/'),
+                    D.propstat(
+                        D.prop(
+                            D.getcontentlength("0"),
+                            D.creationdate("1983-12-23T23:00:00Z"),
+                            D.getlastmodified("Wed, 24 Dec 2014 06:00:00 GMT"),
+                            D.resourcetype(D.collection()),
+                            D.displayname("collection"),
+                        ),
+                        D.status("HTTP/1.1 200 OK")
+                    )
+                ),
             ), pretty_print=True)
         )
