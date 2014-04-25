@@ -20,7 +20,7 @@
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from lxml.etree import ElementTree
 from django.http import HttpResponse, HttpRequest
-from django.utils.datetime_safe import datetime
+from djangodav.base.acl import FullAcl
 from djangodav.response import ResponseException
 from lxml import etree
 
@@ -54,7 +54,7 @@ class TestView(TestCase):
     def test_get_collection_redirect(self):
         actual_path = '/collection/'
         wrong_path = '/collection'
-        v = WebDavView(path=wrong_path)
+        v = WebDavView(path=wrong_path, acl_class=FullAcl)
         v.__dict__['resource'] = MockCollection(actual_path)
         request = Mock(META={'SERVERNANE': 'testserver'}, build_absolute_uri=Mock(return_value=wrong_path))
         resp = v.get(request, wrong_path, 'xbody')
@@ -64,7 +64,7 @@ class TestView(TestCase):
     def test_get_object_redirect(self):
         actual_path = '/object.mp4'
         wrong_path = '/object.mp4/'
-        r = WebDavView(path=wrong_path)
+        r = WebDavView(path=wrong_path, acl_class=FullAcl)
         r.__dict__['resource'] = MockObject(actual_path)
         request = Mock(META={'SERVERNANE': 'testserver'}, build_absolute_uri=Mock(return_value=wrong_path))
         resp = r.get(request, wrong_path, 'xbody')
@@ -73,7 +73,7 @@ class TestView(TestCase):
 
     def test_missing(self):
         path = '/object.mp4'
-        r = WebDavView(path=path)
+        r = WebDavView(path=path, acl_class=FullAcl)
         r.__dict__['resource'] = MissingMockCollection(path)
         request = Mock(META={'SERVERNANE': 'testserver'}, build_absolute_uri=Mock(return_value=path))
         resp = r.get(request, path, 'xbody')
@@ -83,7 +83,7 @@ class TestView(TestCase):
         self.top_collection.get_descendants.return_value += [self.top_collection]
         request = Mock(META={})
         path = '/collection/'
-        v = WebDavView(base_url='/base/', path=path, request=request)
+        v = WebDavView(base_url='/base/', path=path, request=request, acl_class=FullAcl)
         v.__dict__['resource'] = self.top_collection
         resp = v.propfind(request, path, None)
         self.assertEqual(resp.status_code, 207)
@@ -135,7 +135,7 @@ class TestView(TestCase):
         self.sub_object.get_descendants.return_value += [self.sub_object]
         request = Mock(META={})
         path = 'collection/sub_object'
-        v = WebDavView(base_url='/base/', path=path, request=request)
+        v = WebDavView(base_url='/base/', path=path, request=request, acl_class=FullAcl)
         v.__dict__['resource'] = self.sub_object
         resp = v.propfind(request, path,
             etree.XPathDocumentEvaluator(ElementTree(
@@ -167,7 +167,7 @@ class TestView(TestCase):
         self.sub_object.get_descendants.return_value += [self.sub_object]
         request = Mock(META={})
         path = 'collection/sub_object'
-        v = WebDavView(base_url='/base/', path=path, request=request)
+        v = WebDavView(base_url='/base/', path=path, request=request, acl_class=FullAcl)
         v.__dict__['resource'] = self.sub_object
         resp = v.propfind(request, path,
             etree.XPathDocumentEvaluator(ElementTree(
@@ -200,7 +200,7 @@ class TestView(TestCase):
         self.sub_object.get_descendants.return_value += [self.sub_object]
         request = Mock(META={})
         path = 'collection/sub_object'
-        v = WebDavView(base_url='/base/', path=path, request=request)
+        v = WebDavView(base_url='/base/', path=path, request=request, acl_class=FullAcl)
         v.__dict__['resource'] = self.sub_object
         resp = v.propfind(request, path,
             etree.XPathDocumentEvaluator(ElementTree(
@@ -304,9 +304,9 @@ class TestView(TestCase):
 
     def test_get_obj(self):
         path = '/obj.txt'
-        v = WebDavView(path=path, _allowed_methods=Mock(return_value=['ALL']))
+        v = WebDavView(path=path, _allowed_methods=Mock(return_value=['ALL']), acl_class=FullAcl)
         v.__dict__['resource'] = MockObject(path, read=Mock(return_value="C" * 42))
-        resp = v.get(None, path)
+        resp = v.get(None, path, acl_class=FullAcl)
         self.assertEqual(resp['Etag'], "0" * 40)
         self.assertEqual(resp['Content-Type'], "text/plain")
         self.assertEqual(resp['Last-Modified'], "Wed, 24 Dec 2014 06:00:00 GMT")
@@ -315,7 +315,7 @@ class TestView(TestCase):
     @patch('djangodav.views.render_to_response', Mock(return_value=HttpResponse('listing')))
     def test_head_object(self):
         path = '/object.txt'
-        v = WebDavView(path=path, base_url='/base', _allowed_methods=Mock(return_value=['ALL']))
+        v = WebDavView(path=path, base_url='/base', _allowed_methods=Mock(return_value=['ALL']), acl_class=FullAcl)
         v.__dict__['resource'] = MockObject(path)
         resp = v.head(None, path)
         self.assertEqual("text/plain", resp['Content-Type'])
@@ -326,7 +326,7 @@ class TestView(TestCase):
     @patch('djangodav.views.render_to_response', Mock(return_value=HttpResponse('listing')))
     def test_get_collection(self):
         path = '/collection/'
-        v = WebDavView(path=path, base_url='/base', _allowed_methods=Mock(return_value=['ALL']))
+        v = WebDavView(path=path, acl_class=FullAcl, base_url='/base', _allowed_methods=Mock(return_value=['ALL']))
         v.__dict__['resource'] = MockCollection(path)
         resp = v.get(None, path)
         self.assertEqual("listing", resp.content)
@@ -334,7 +334,7 @@ class TestView(TestCase):
 
     def test_head_collection(self):
         path = '/collection/'
-        v = WebDavView(path=path, base_url='/base', _allowed_methods=Mock(return_value=['ALL']))
+        v = WebDavView(path=path, acl_class=FullAcl, base_url='/base', _allowed_methods=Mock(return_value=['ALL']))
         v.__dict__['resource'] = MockCollection(path)
         resp = v.head(None, path)
         self.assertEqual("", resp.content)
