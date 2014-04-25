@@ -19,46 +19,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from django.test import TestCase
-from django.utils.timezone import now
 from djangodav.base.resource import BaseDavResource
-from mock import patch, Mock, MagicMock
-
-
-class MockResource(MagicMock, BaseDavResource):
-    exists = True
-    get_created = Mock(return_value=now)
-    get_modified = Mock(return_value=now)
-    getcontentlength = 0
-
-    def __init__(self, path, *args, **kwargs):
-        super(MockResource, self).__init__(spec=BaseDavResource, *args, **kwargs)
-        BaseDavResource.__init__(self, path)
-
-
-class MockObject(MockResource):
-    is_object = True
-    is_collection = False
-    getcontentlength = 42
-
-
-class MockCollection(MockResource):
-    is_object = False
-    is_collection = True
-
-
-class MissingMockResource(MockResource):
-    exists = False
-
-
-class MissingMockObject(MissingMockResource):
-    is_object = True
-    is_collection = False
-    getcontentlength = 42
-
-
-class MissingMockCollection(MissingMockResource):
-    is_object = False
-    is_collection = True
+from djangodav.base.tests.resource import MockCollection, MockObject, MissingMockCollection
+from mock import patch, Mock
 
 
 class TestBaseDavResource(TestCase):
