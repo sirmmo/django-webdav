@@ -269,7 +269,8 @@ class TestView(TestCase):
 
     def test_options_root(self):
         path = '/'
-        v = WebDavView(path=path)
+        v = WebDavView(path=path, acl_class=FullAcl)
+        v.__dict__['resource'] = MockObject(path)
         resp = v.options(None, path)
         self.assertEqual(sorted(resp.items()), [
             ('Content-Length', '0'),
@@ -279,7 +280,7 @@ class TestView(TestCase):
 
     def test_options_obj(self):
         path = '/obj'
-        v = WebDavView(path=path, _allowed_methods=Mock(return_value=['ALL']))
+        v = WebDavView(path=path, _allowed_methods=Mock(return_value=['ALL']), acl_class=FullAcl)
         v.__dict__['resource'] = MockObject(path)
         resp = v.options(None, path)
         self.assertEqual(sorted(resp.items()), [
@@ -292,7 +293,7 @@ class TestView(TestCase):
 
     def test_options_collection(self):
         path = '/collection/'
-        v = WebDavView(path=path, _allowed_methods=Mock(return_value=['ALL']))
+        v = WebDavView(path=path, _allowed_methods=Mock(return_value=['ALL']), acl_class=FullAcl)
         v.__dict__['resource'] = MockCollection(path)
         resp = v.options(None, path)
         self.assertEqual(sorted(resp.items()), [
