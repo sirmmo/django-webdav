@@ -37,6 +37,7 @@ class TestView(TestCase):
         self.blank_collection = MockCollection(
             path='/blank_collection/',
             get_descendants=Mock(return_value=[]),
+            get_parent=lambda: self.top_collection
         )
         self.sub_object = MockObject(
             path='/collection/sub_object',
@@ -435,3 +436,69 @@ class TestView(TestCase):
         resp = v.delete(request, target.get_displaypath())
         self.assertFalse(target.delete.called)
         self.assertEqual(404, resp.status_code)
+
+    def test_copy_new(self):
+        src = self.sub_object
+        src.copy = Mock(return_value=None)
+        dst = self.missing_sub_object
+        request = HttpRequest()
+        request.META['HTTP_DESTINATION'] = "http://testserver%s" % dst.get_displaypath()
+        request.META['SERVER_NAME'] = 'testserver'
+        request.META['SERVER_PORT'] = '80'
+        v = WebDavView(base_url='http://testserver', request=request, path=src.get_displaypath(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
+        v.resource_class = Mock(return_value=dst)
+        v.__dict__['resource'] = src
+        resp = v.copy(request, src.get_displaypath(), None)
+        self.assertEqual(201, resp.status_code)
+        self.assertTrue(src.copy.called)
+
+    def test_copy_overwrite(self):
+        src = self.sub_object
+        src.copy = Mock(return_value=None)
+        dst = self.blank_collection
+        dst.delete = Mock(return_value=None)
+        request = HttpRequest()
+        request.META['HTTP_DESTINATION'] = "http://testserver%s" % dst.get_displaypath()
+        request.META['SERVER_NAME'] = 'testserver'
+        request.META['SERVER_PORT'] = '80'
+        v = WebDavView(base_url='http://testserver', request=request, path=src.get_displaypath(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
+        v.resource_class = Mock(return_value=dst)
+        v.__dict__['resource'] = src
+        resp = v.copy(request, src.get_displaypath(), None)
+        self.assertEqual(204, resp.status_code)
+        self.assertTrue(src.copy.called)
+        self.assertTrue(dst.delete.called)
+
+    def test_move_new(self):
+        src = self.sub_object
+        src.move = Mock(return_value=None)
+        dst = self.missing_sub_object
+        dst.delete = Mock(return_value=None)
+        request = HttpRequest()
+        request.META['HTTP_DESTINATION'] = "http://testserver%s" % dst.get_displaypath()
+        request.META['SERVER_NAME'] = 'testserver'
+        request.META['SERVER_PORT'] = '80'
+        v = WebDavView(base_url='http://testserver', request=request, path=src.get_displaypath(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
+        v.resource_class = Mock(return_value=dst)
+        v.__dict__['resource'] = src
+        resp = v.move(request, src.get_displaypath(), None)
+        self.assertEqual(201, resp.status_code)
+        self.assertTrue(src.move.called)
+        self.assertFalse(dst.delete.called)
+
+    def test_move_overwrite(self):
+        src = self.sub_object
+        src.move = Mock(return_value=None)
+        dst = self.blank_collection
+        dst.delete = Mock(return_value=None)
+        request = HttpRequest()
+        request.META['HTTP_DESTINATION'] = "http://testserver%s" % dst.get_displaypath()
+        request.META['SERVER_NAME'] = 'testserver'
+        request.META['SERVER_PORT'] = '80'
+        v = WebDavView(base_url='http://testserver', request=request, path=src.get_displaypath(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
+        v.resource_class = Mock(return_value=dst)
+        v.__dict__['resource'] = src
+        resp = v.move(request, src.get_displaypath(), None)
+        self.assertEqual(204, resp.status_code)
+        self.assertTrue(src.move.called)
+        self.assertTrue(dst.delete.called)

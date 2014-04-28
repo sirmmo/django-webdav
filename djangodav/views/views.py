@@ -232,7 +232,7 @@ class WebDavView(View):
         self.__dict__['resource'] = self.resource_class(self.resource.get_path())
         return HttpResponseCreated()
 
-    def copy(self, request, path, move=False, *args, **kwargs):
+    def relocate(self, request, path, method, *args, **kwargs):
         if not self.resource.exists:
             return HttpResponseNotFound()
         if not self.has_access(self.resource, 'read'):
@@ -241,7 +241,7 @@ class WebDavView(View):
         if not dst:
             return HttpResponseBadRequest('Destination header missing.')
         dparts = urlparse.urlparse(dst)
-        sparts = urlparse.urlparse(self.request.build_absolute_uri())
+        sparts = urlparse.urlparse(request.build_absolute_uri())
         if sparts.scheme != dparts.scheme or sparts.netloc != dparts.netloc:
             return HttpResponseBadGateway('Source and destination must have the same scheme and host.')
         # adjust path for our base url:
@@ -250,40 +250,34 @@ class WebDavView(View):
             return HttpResponseConflict()
         if not self.has_access(self.resource, 'write'):
             return HttpResponseForbidden()
-        overwrite = self.request.META.get('HTTP_OVERWRITE', 'T')
+        overwrite = request.META.get('HTTP_OVERWRITE', 'T')
         if overwrite not in ('T', 'F'):
             return HttpResponseBadRequest('Overwrite header must be T or F.')
         overwrite = (overwrite == 'T')
         if not overwrite and dst.exists:
             return HttpResponsePreconditionFailed('Destination exists and overwrite False.')
-        depth = self.get_depth()
-        if move and depth != -1:
-            return HttpResponseBadRequest()
-        if depth not in (0, -1):
-            return HttpResponseBadRequest()
         dst_exists = dst.exists
-        if move:
-            if dst_exists:
-                self.lock_class(self.resource).del_locks()
-                self.lock_class(dst).del_locks()
-                dst.delete()
-            errors = self.resource.move(dst)
-        else:
-            errors = self.resource.copy(dst, depth=depth)
-        if move:
+        if dst_exists:
             self.lock_class(self.resource).del_locks()
+            self.lock_class(dst).del_locks()
+            dst.delete()
+        errors = getattr(self.resource, method)(dst, *args, **kwargs)
         if errors:
-            response = HttpResponseMultiStatus()
-        elif dst_exists:
-            response = HttpResponseNoContent()
-        else:
-            response = HttpResponseCreated()
-        return response
+            return HttpResponseMultiStatus() # WAT?
+        if dst_exists:
+            return HttpResponseNoContent()
+        return HttpResponseCreated()
 
-    def move(self, request, path, *args, **kwargs):
+    def copy(self, request, path, xbody):
+        depth = self.get_depth()
+        if depth != -1:
+            return HttpResponseBadRequest()
+        return self.relocate(request, path, 'copy', depth=depth)
+
+    def move(self, request, path, xbody):
         if not self.has_access(self.resource, 'delete'):
             return HttpResponseForbidden()
-        return self.copy(request, path, move=True, *args, **kwargs)
+        return self.relocate(request, path, 'move')
 
     def lock(self, request, path, xbody=None, *args, **kwargs):
         # TODO Lock refreshing
