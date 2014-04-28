@@ -151,7 +151,7 @@ class NameLookupDBDavMixIn(object):
     def copy_object(self, destination):
         self.obj.pk = None
         name = destination.path[-1]
-        collection = self.__class__(destination.path).obj
+        collection = self.__class__(destination.get_path()).obj
         setattr(self.obj, self.name_attribute, name)
         setattr(self.obj, self.collection_attribute, collection)
         setattr(self.obj, self.created_attribute, now())
@@ -161,7 +161,7 @@ class NameLookupDBDavMixIn(object):
 
     def move_object(self, destination):
         name = destination.path[-1]
-        collection = self.__class__(destination.path).obj
+        collection = self.__class__(destination.get_path()).obj
         setattr(self.obj, self.name_attribute, name)
         setattr(self.obj, self.collection_attribute, collection)
         setattr(self.obj, self.modified_attribute, now())
