@@ -338,7 +338,7 @@ class TestView(TestCase):
         self.assertEqual("", resp.content)
         self.assertEqual("0", resp['Content-Length'])
 
-    @patch('djangodav.views.render_to_response', Mock(return_value=HttpResponse('listing')))
+    @patch('djangodav.views.views.render_to_response', Mock(return_value=HttpResponse('listing')))
     def test_get_collection(self):
         path = '/collection/'
         v = WebDavView(path=path, acl_class=FullAcl, base_url='/base', _allowed_methods=Mock(return_value=['ALL']))
