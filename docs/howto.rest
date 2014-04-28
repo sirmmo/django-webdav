@@ -48,7 +48,6 @@ We provide DavAcl, ReadOnlyAcl and FullAcl.
         acl_class=FullAcl
 
     urlpatterns = patterns('',
-        # Mirroring tmp folder
         (r'^mywebdav(?P<path>.*)$', DavView.as_view(),
     )
 
@@ -57,7 +56,6 @@ Or using inline url definition
 .. code:: python
 
     urlpatterns = patterns('',
-        # Mirroring tmp folder
         (r'^mywebdav(?P<path>.*)$', DavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock,
          acl_class=FullAcl)),
     )
