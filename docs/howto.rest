@@ -1,0 +1,63 @@
+======
+How to
+======
+
+
+Build your webdav service
+-------------------------
+
+
+1. Decide what type of storage you prefer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We provide two types of resources - data base and file system. If you need simple webdav to fs service. Simply inherit
+your own resource from DummyWriteFSDavResource and DummyReadFSDavResource. You'll get resource which will use memory
+to pass all the objects content to read or write data.
+
+.. code:: python
+
+    class MyResource(DummyWriteFSDavResource, DummyReadFSDavResource):
+        root = '/var/www/webdav/'
+
+
+2. Decide what type of lock you would like two use
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For now we provide only DummyLock Which accepts data, but doesn't store it. You can implement your own fitting your
+needs.
+
+
+3. Decide what access type you would like to provide
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We provide DavAcl, ReadOnlyAcl and FullAcl.
+
+* DavAcl doesn't provide any access to the service.
+* ReadOnlyAcl provides only reading and listing.
+* FullAcl provides full access.
+
+
+4. Create and register view
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code:: python
+
+    class MyView(DavView):
+        resource_class = MyResource
+        lock_class=DummyLock
+        acl_class=FullAcl
+
+    urlpatterns = patterns('',
+        # Mirroring tmp folder
+        (r'^mywebdav(?P<path>.*)$', DavView.as_view(),
+    )
+
+Or using inline url definition
+
+.. code:: python
+
+    urlpatterns = patterns('',
+        # Mirroring tmp folder
+        (r'^mywebdav(?P<path>.*)$', DavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock,
+         acl_class=FullAcl)),
+    )
