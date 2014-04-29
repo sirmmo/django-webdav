@@ -2,60 +2,139 @@
 How to
 ======
 
+Create simple filesystem webdav resource
+----------------------------------------
 
-Build your webdav service
--------------------------
-
-
-1. Decide what type of storage you prefer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We provide two types of resources - data base and file system. If you need simple webdav to fs service. Simply inherit
-your own resource from DummyWriteFSDavResource and DummyReadFSDavResource. You'll get resource which will use memory
-to pass all the objects content to read or write data.
+1. Create resource.py
+~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: python
 
-    class MyResource(DummyWriteFSDavResource, DummyReadFSDavResource):
-        root = '/var/www/webdav/'
+    from django.conf import settings
+    from djangodav.base.resource import MetaEtagMixIn
+    from djangodav.fs.resource import DummyFSDAVResource
+
+    class MyDavResource(MetaEtagMixIn, DummyFSDAVResource):
+        root = '/path/to/folder'
 
 
-2. Decide what type of lock you would like two use
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-For now we provide only DummyLock Which accepts data, but doesn't store it. You can implement your own fitting your
-needs.
-
-
-3. Decide what access type you would like to provide
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We provide DavAcl, ReadOnlyAcl and FullAcl.
-
-* DavAcl doesn't provide any access to the service.
-* ReadOnlyAcl provides only reading and listing.
-* FullAcl provides full access.
-
-
-4. Create and register view
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2. Register WebDav view in urls.py
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: python
 
-    class MyView(DavView):
-        resource_class = MyResource
-        lock_class=DummyLock
-        acl_class=FullAcl
+    from djangodav.acl import FullAcl
+    from djangodav.lock import DummyLock
+    from djangodav.views import DavView
+
+    from django.conf.urls import patterns
+
+    from .resource import TempDirWebDavResource
 
     urlpatterns = patterns('',
-        (r'^mywebdav(?P<path>.*)$', DavView.as_view(),
+        (r'^fsdav(?P<path>.*)$', DavView.as_view(resource_class=MyDavResource, lock_class=DummyLock,
+         acl_class=FullAcl)),
     )
 
-Or using inline url definition
+
+Create simple database webdav resource
+--------------------------------------
+
+1. Create models.py
+~~~~~~~~~~~~~~~~~~~
 
 .. code:: python
 
+    from django.db import models
+    from django.utils.timezone import now
+
+    class BaseDavModel(models.Model):
+        name = models.CharField(max_length=255)
+        created = models.DateTimeField(default=now)
+        modified = models.DateTimeField(default=now)
+
+        class Meta:
+            abstract = True
+
+
+    class CollectionModel(BaseDavModel):
+        parent = models.ForeignKey('self', blank=True, null=True)
+        size = 0
+
+        class Meta:
+            unique_together = (('parent', 'name'),)
+
+
+    class ObjectModel(BaseDavModel):
+        parent = models.ForeignKey(CollectionModel, blank=True, null=True)
+        size = models.IntegerField(default=0)
+        content = models.TextField(default=u"")
+        md5 = models.CharField(max_length=255)
+
+        class Meta:
+            unique_together = (('parent', 'name'),)
+
+2. Create resource.py
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code:: python
+
+    from base64 import b64encode, b64decode
+    from hashlib import md5
+
+    from django.utils.timezone import now
+    from djangodav.db.resource import NameLookupDBDavMixIn, BaseDBDavResource
+    from samples.db.models import CollectionModel, ObjectModel
+
+    class MyDBDavResource(NameLookupDBDavMixIn, BaseDBDavResource):
+        collection_model = CollectionModel
+        object_model = ObjectModel
+
+        def write(self, content):
+            size = len(content)
+            hashsum = md5(content).hexdigest()
+            content = b64encode(content)
+            if not self.exists:
+                self.object_model.objects.create(
+                    name=self.displayname,
+                    parent=self.get_parent().obj,
+                    md5=hashsum,
+                    size=size,
+                    content=content
+                )
+                return
+            self.obj.size = size
+            self.obj.modified = now()
+            self.obj.content = content
+            self.md5 = hashsum
+            self.obj.save(update_fields=['content', 'size', 'modified', 'md5'])
+
+        def read(self):
+            return b64decode(self.obj.content)
+
+        @property
+        def getetag(self):
+            return self.obj.md5
+
+        @property
+        def getcontentlength(self):
+            return self.obj.size
+
+2. Register DavView in urls.py
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code:: python
+
+    from djangodav.acl import FullAcl
+    from djangodav.lock import DummyLock
+
+    from djangodav.views import DavView
+
+    from django.conf.urls import patterns
+    from samples.db.resource import MyDBDavResource
+
+
     urlpatterns = patterns('',
-        (r'^mywebdav(?P<path>.*)$', DavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock,
-         acl_class=FullAcl)),
+        # Mirroring tmp folder
+        (r'^dbdav(?P<path>.*)$', DavView.as_view(resource_class=MyDBDavResource, lock_class=DummyLock, acl_class=FullAcl)),
     )
