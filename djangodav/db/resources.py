@@ -23,7 +23,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from django.utils.functional import cached_property
 from django.utils.timezone import now
-from djangodav.base.resource import BaseDavResource
+from djangodav.base.resources import BaseDavResource
 from djangodav.utils import url_join
 
 

@@ -20,7 +20,7 @@
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from uuid import uuid4
 
-from djangodav.base.lock import BaseLock
+from djangodav.base.locks import BaseLock
 
 
 class DummyLock(BaseLock):

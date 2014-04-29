@@ -20,12 +20,12 @@
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from lxml.etree import ElementTree
 from django.http import HttpResponse, HttpRequest
-from djangodav.acl import FullAcl
-from djangodav.lock import DummyLock
-from djangodav.response import ResponseException
+from djangodav.acls import FullAcl
+from djangodav.locks import DummyLock
+from djangodav.responses import ResponseException
 from lxml import etree
 
-from djangodav.base.tests.resource import MockCollection, MockObject, MissingMockCollection, MissingMockObject
+from djangodav.base.tests.resources import MockCollection, MockObject, MissingMockCollection, MissingMockObject
 from djangodav.fs.tests import *
 from djangodav.utils import D, WEBDAV_NSMAP, rfc1123_date
 from djangodav.views import DavView
@@ -143,7 +143,7 @@ class TestView(TestCase):
                         D.status("HTTP/1.1 200 OK")
                     )
                 ),
-            ), pretty_print=True)
+            ), pretty_print=True, xml_declaration=True)
         )
 
     def test_propfind_exact_names(self):
@@ -175,7 +175,7 @@ class TestView(TestCase):
                         D.status("HTTP/1.1 200 OK")
                     )
                 ),
-            ), pretty_print=True)
+            ), pretty_print=True, xml_declaration=True)
         )
 
     def test_propfind_allprop(self):
@@ -207,7 +207,7 @@ class TestView(TestCase):
                         D.status("HTTP/1.1 200 OK")
                     )
                 ),
-            ), pretty_print=True)
+            ), pretty_print=True, xml_declaration=True)
         )
 
 
@@ -240,7 +240,7 @@ class TestView(TestCase):
                         D.status("HTTP/1.1 200 OK")
                     )
                 ),
-            ), pretty_print=True)
+            ), pretty_print=True, xml_declaration=True)
         )
 
     def test_dispatch(self):

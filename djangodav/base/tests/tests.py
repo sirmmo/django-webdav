@@ -19,8 +19,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from django.test import TestCase
-from djangodav.base.resource import BaseDavResource
-from djangodav.base.tests.resource import MockCollection, MockObject, MissingMockCollection
+from djangodav.base.resources import BaseDavResource
+from djangodav.base.tests.resources import MockCollection, MockObject, MissingMockCollection
 from mock import patch, Mock
 
 
@@ -32,15 +32,15 @@ class TestBaseDavResource(TestCase):
     def test_path(self):
         self.assertEqual(self.resource.path, ['path', 'to', 'name'])
 
-    @patch('djangodav.base.resource.BaseDavResource.is_collection', True)
+    @patch('djangodav.base.resources.BaseDavResource.is_collection', True)
     def test_get_path_collection(self):
         self.assertEqual(self.resource.get_path(), '/path/to/name/')
 
-    @patch('djangodav.base.resource.BaseDavResource.is_collection', False)
+    @patch('djangodav.base.resources.BaseDavResource.is_collection', False)
     def test_get_path_object(self):
         self.assertEqual(self.resource.get_path(), '/path/to/name')
 
-    @patch('djangodav.base.resource.BaseDavResource.get_children', Mock(return_value=[]))
+    @patch('djangodav.base.resources.BaseDavResource.get_children', Mock(return_value=[]))
     def test_get_descendants(self):
         self.assertEqual(list(self.resource.get_descendants(depth=1, include_self=True)), [self.resource])
 

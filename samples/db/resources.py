@@ -22,7 +22,7 @@ from base64 import b64encode, b64decode
 from hashlib import md5
 
 from django.utils.timezone import now
-from djangodav.db.resource import NameLookupDBDavMixIn, BaseDBDavResource
+from djangodav.db.resources import NameLookupDBDavMixIn, BaseDBDavResource
 from samples.db.models import CollectionModel, ObjectModel
 
 

@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from django.test import TestCase
-from djangodav.fs.resource import BaseFSDavResource
+from djangodav.fs.resources import BaseFSDavResource
 from mock import patch
 
 
@@ -31,25 +31,25 @@ class TestFSDavResource(TestCase):
     def setUp(self):
         self.resource = self.FSDavResource("/path/to/name")
 
-    @patch('djangodav.fs.resource.os.path.isdir')
+    @patch('djangodav.fs.resources.os.path.isdir')
     def test_is_collection(self, isdir):
         isdir.return_value = True
         self.assertTrue(self.resource.is_collection)
         isdir.assert_called_with('/some/folder/path/to/name')
 
-    @patch('djangodav.fs.resource.os.path.isfile')
+    @patch('djangodav.fs.resources.os.path.isfile')
     def test_isfile(self, isfile):
         isfile.return_value = True
         self.assertTrue(self.resource.is_object)
         isfile.assert_called_with('/some/folder/path/to/name')
 
-    @patch('djangodav.fs.resource.os.path.exists')
+    @patch('djangodav.fs.resources.os.path.exists')
     def test_isfile(self, exists):
         exists.return_value = True
         self.assertTrue(self.resource.exists)
         exists.assert_called_with('/some/folder/path/to/name')
 
-    @patch('djangodav.fs.resource.os.path.getsize')
+    @patch('djangodav.fs.resources.os.path.getsize')
     def test_get_size(self, getsize):
         getsize.return_value = 42
         self.assertEquals(self.resource.getcontentlength, 42)
@@ -58,7 +58,7 @@ class TestFSDavResource(TestCase):
     def test_get_abs_path(self):
         self.assertEquals(self.resource.get_abs_path(), '/some/folder/path/to/name')
 
-    @patch('djangodav.fs.resource.os.listdir')
+    @patch('djangodav.fs.resources.os.listdir')
     def test_get_children(self, listdir):
         listdir.return_value=['child1', 'child2']
         children = list(self.resource.get_children())

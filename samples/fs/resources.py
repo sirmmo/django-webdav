@@ -1,6 +1,6 @@
 from django.conf import settings
-from djangodav.base.resource import MetaEtagMixIn
-from djangodav.fs.resource import DummyFSDAVResource
+from djangodav.base.resources import MetaEtagMixIn
+from djangodav.fs.resources import DummyFSDAVResource
 
 
 class TempDirWebDavResource(MetaEtagMixIn, DummyFSDAVResource):

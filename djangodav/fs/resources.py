@@ -29,8 +29,8 @@ import urllib
 from django.http import HttpResponse
 from django.utils.http import http_date
 
-from djangodav.base.resource import BaseDavResource
-from djangodav.response import ResponseException
+from djangodav.base.resources import BaseDavResource
+from djangodav.responses import ResponseException
 from djangodav.utils import safe_join, url_join
 
 

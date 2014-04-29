@@ -18,15 +18,15 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
-from djangodav.acl import FullAcl
-from djangodav.lock import DummyLock
+from djangodav.acls import FullAcl
+from djangodav.locks import DummyLock
 
 from djangodav.views import DavView
 
 from django.conf.urls import patterns
 
-from samples.fs.resource import TempDirWebDavResource
-from samples.db.resource import MyDBDavResource
+from samples.fs.resources import TempDirWebDavResource
+from samples.db.resources import MyDBDavResource
 
 
 urlpatterns = patterns('',
