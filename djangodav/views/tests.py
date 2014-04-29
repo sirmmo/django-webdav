@@ -20,7 +20,7 @@
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from lxml.etree import ElementTree
 from django.http import HttpResponse, HttpRequest
-from djangodav.base.acl import FullAcl
+from djangodav.acl import FullAcl
 from djangodav.lock import DummyLock
 from djangodav.response import ResponseException
 from lxml import etree
