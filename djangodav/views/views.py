@@ -22,7 +22,7 @@ from django import VERSION as django_version, get_version
 PATTERN_IF_DELIMITER = re.compile(r'(<([^>]+)>)|(\(([^\)]+)\))')
 
 
-class WebDavView(View):
+class DavView(View):
     resource_class = None
     lock_class = None
     acl_class = None

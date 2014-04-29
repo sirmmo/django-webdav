@@ -21,7 +21,7 @@
 from djangodav.acl import FullAcl
 from djangodav.lock import DummyLock
 
-from djangodav.views import WebDavView
+from djangodav.views import DavView
 
 from django.conf.urls import patterns
 
@@ -31,7 +31,7 @@ from samples.db.resource import MyDBDavResource
 
 urlpatterns = patterns('',
     # Mirroring tmp folder
-    (r'^fs(?P<path>.*)$', WebDavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock, acl_class=FullAcl)),
+    (r'^fs(?P<path>.*)$', DavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock, acl_class=FullAcl)),
     # Db file keeper
-    (r'^db(?P<path>.*)$', WebDavView.as_view(resource_class=MyDBDavResource, lock_class=DummyLock, acl_class=FullAcl)),
+    (r'^db(?P<path>.*)$', DavView.as_view(resource_class=MyDBDavResource, lock_class=DummyLock, acl_class=FullAcl)),
 )
