@@ -31,14 +31,7 @@ setup(
     name='DjangoDav',
     version=version,
     description=('A WebDAV server for Django.'),
-    long_description=(
-"""
-Fork of WebDAV implemented as a Django application. The motivation for this project is to
-allow authentication of users against Django's contrib.auth system, while also
-exporting different directories per user. Many Django tools and app can be combined
-with this such as django-digest etc. to provide a powerful WebDAV server. 
-"""
-    ),
+    long_description = open('README.rst').read(),
     author='Alexander Klimenko',
     author_email='alex@erix.ru',
     url='https://github.com/meteozond/djangodav',
