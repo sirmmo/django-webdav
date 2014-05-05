@@ -27,6 +27,8 @@ from django.conf.urls import patterns
 
 from samples.fs.resources import TempDirWebDavResource
 from samples.db.resources import MyDBDavResource
+from samples.auth.views.rest import RestAuthDavView
+from samples.auth.views.tasty import TastyAuthDavView
 
 
 urlpatterns = patterns('',
@@ -34,4 +36,9 @@ urlpatterns = patterns('',
     (r'^fs(?P<path>.*)$', DavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock, acl_class=FullAcl)),
     # Db file keeper
     (r'^db(?P<path>.*)$', DavView.as_view(resource_class=MyDBDavResource, lock_class=DummyLock, acl_class=FullAcl)),
+
+    # REST framework auth
+    (r'^auth/rest(?P<path>.*)$', RestAuthDavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock, acl_class=FullAcl)),
+    # Tastypie auth
+    (r'^auth/tasty(?P<path>.*)$', TastyAuthDavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock, acl_class=FullAcl)),
 )
