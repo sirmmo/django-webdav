@@ -73,3 +73,7 @@ class HttpResponseConflict(HttpResponse):
 
 class HttpResponseLocked(HttpResponse):
     status_code = httplib.LOCKED
+
+
+class HttpResponseUnAuthorized(HttpResponse):
+    status_code = httplib.UNAUTHORIZED
