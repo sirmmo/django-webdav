@@ -335,7 +335,7 @@ class DavView(View):
             + ([owner_obj] if not owner_obj is None else [])
         ))
 
-        return HttpResponse(etree.tostring(body, pretty_print=True, xml_declaration=True), content_type='application/xml')
+        return HttpResponse(etree.tostring(body, pretty_print=True, xml_declaration=True, encoding='utf-8'), content_type='application/xml')
 
     def unlock(self, request, path, xbody=None, *args, **kwargss):
         if not self.has_access(self.resource, 'write'):
@@ -396,7 +396,7 @@ class DavView(View):
             ]
 
         body = D.multistatus(*responses)
-        response = HttpResponseMultiStatus(etree.tostring(body, pretty_print=True, xml_declaration=True))
+        response = HttpResponseMultiStatus(etree.tostring(body, pretty_print=True, xml_declaration=True, encoding='utf-8'))
         return response
 
     def proppatch(self, request, path, *args, **kwargs):
