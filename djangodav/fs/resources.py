@@ -83,7 +83,7 @@ class BaseFSDavResource(BaseDavResource):
         for child in os.listdir(self.get_abs_path()):
             if not isinstance(child, unicode):
                 child = child.decode(fs_encoding)
-            yield self.__class__(url_join(*(self.path + [child])))
+            yield self.clone(url_join(*(self.path + [child])))
 
     def write(self, content):
         raise NotImplemented

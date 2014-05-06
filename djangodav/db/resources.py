@@ -72,14 +72,18 @@ class BaseDBDavResource(BaseDavResource):
     def exists(self):
         return self.is_root or self.obj
 
+    def get_model_kwargs(self, **kwargs):
+        return kwargs or {}
+
     def get_children(self):
         """Return an iterator of all direct children of this resource."""
         if not self.exists or isinstance(self.obj, self.object_model):
             return
 
         for model in [self.collection_model, self.object_model]:
-            for child in model.objects.filter(**{self.collection_attribute: self.obj}):
-                yield self.__class__(
+            kwargs = self.get_model_kwargs(**{self.collection_attribute: self.obj})
+            for child in model.objects.filter(**kwargs):
+                yield self.clone(
                     url_join(*(self.path + [child.name])),
                     obj=child    # Sending ready object to reduce db requests
                 )
@@ -113,8 +117,9 @@ class NameLookupDBDavMixIn(object):
 
     def create_collection(self):
         name = self.path[-1]
-        parent = self.__class__("/".join(self.path[:-1])).obj
-        self.collection_model.objects.create(**{self.collection_attribute: parent, 'name': name})
+        parent = self.clone("/".join(self.path[:-1])).obj
+        kwargs = self.get_model_kwargs(**{self.collection_attribute: parent, 'name': name})
+        self.collection_model.objects.create(**kwargs)
 
     @cached_property
     def obj(self):
@@ -132,9 +137,6 @@ class NameLookupDBDavMixIn(object):
             except ObjectDoesNotExist:
                 continue
 
-    def get_model_kwargs(self, **kwargs):
-        return kwargs or {}
-
     def get_model_by_path(self, model, *path):
         if not path:
             return None
@@ -147,7 +149,7 @@ class NameLookupDBDavMixIn(object):
         args.append(Q(**{"__".join([self.collection_attribute] * len(path)): None}))
         related = ["__".join([self.collection_attribute] * i) for i in range(1, len(path))]
 
-        qs = model.objects.filter(self.get_model_kwargs())
+        qs = model.objects.filter(**self.get_model_kwargs())
         if related:
             qs = qs.select_related(*related)
         try:
@@ -158,7 +160,7 @@ class NameLookupDBDavMixIn(object):
     def copy_object(self, destination):
         self.obj.pk = None
         name = destination.path[-1]
-        collection = self.__class__(destination.get_path()).obj
+        collection = self.clone(destination.get_path()).obj
         setattr(self.obj, self.name_attribute, name)
         setattr(self.obj, self.collection_attribute, collection)
         setattr(self.obj, self.created_attribute, now())
@@ -168,7 +170,7 @@ class NameLookupDBDavMixIn(object):
 
     def move_object(self, destination):
         name = destination.path[-1]
-        collection = self.__class__(destination.get_path()).obj
+        collection = self.clone(destination.get_path()).obj
         setattr(self.obj, self.name_attribute, name)
         setattr(self.obj, self.collection_attribute, collection)
         setattr(self.obj, self.modified_attribute, now())

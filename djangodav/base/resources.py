@@ -61,7 +61,7 @@ class BaseDavResource(object):
         return "/" + "/".join(path) + "/" if path else ""
 
     def get_parent(self):
-        return self.__class__(self.get_parent_path())
+        return self.clone(self.get_parent_path())
 
     def get_descendants(self, depth=1, include_self=True):
         """Return an iterator of all descendants of this resource."""
@@ -121,7 +121,7 @@ class BaseDavResource(object):
         # in case of infinity.
         if depth != 0:
             for child in self.get_children():
-                child.copy(self.__class__(safe_join(destination.get_path(), child.displayname)),
+                child.copy(self.clone(safe_join(destination.get_path(), child.displayname)),
                            depth=depth-1)
 
     def copy_object(self, destination):
@@ -142,8 +142,11 @@ class BaseDavResource(object):
         will refuse to move to an existing resource otherwise. This method needs to gracefully
         handle a pre-existing destination of any type."""
         for child in self.get_children():
-            child.move(self.__class__(safe_join(destination.get_path(), child.displayname)))
+            child.move(self.clone(safe_join(destination.get_path(), child.displayname)))
         self.delete()
+
+    def clone(self, *args, **kwargs):
+        return self.__class__(*args, **kwargs)
 
     def move_object(self, destination):
         raise NotImplemented()
