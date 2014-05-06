@@ -132,6 +132,9 @@ class NameLookupDBDavMixIn(object):
             except ObjectDoesNotExist:
                 continue
 
+    def get_model_kwargs(self, **kwargs):
+        return kwargs or {}
+
     def get_model_by_path(self, model, *path):
         if not path:
             return None
@@ -144,7 +147,7 @@ class NameLookupDBDavMixIn(object):
         args.append(Q(**{"__".join([self.collection_attribute] * len(path)): None}))
         related = ["__".join([self.collection_attribute] * i) for i in range(1, len(path))]
 
-        qs = model.objects
+        qs = model.objects.filter(self.get_model_kwargs())
         if related:
             qs = qs.select_related(*related)
         try:
