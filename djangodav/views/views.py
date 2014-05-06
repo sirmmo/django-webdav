@@ -108,7 +108,7 @@ class DavView(View):
         return self.get_resource(path=self.path)
 
     def get_resource(self, **kwargs):
-        self.resource_class(**self.get_resource_kwargs(**kwargs))
+        return self.resource_class(**self.get_resource_kwargs(**kwargs))
 
     def get_depth(self, default='infinity'):
         depth = str(self.request.META.get('HTTP_DEPTH', default)).lower()
