@@ -51,9 +51,13 @@ class BaseDBDavResource(BaseDavResource):
         return getattr(self.obj, self.size_attribute)
 
     def get_created(self):
+        if self.is_root:
+            return now()
         return getattr(self.obj, self.created_attribute)
 
     def get_modified(self):
+        if self.is_root:
+            return now()
         return getattr(self.obj, self.modified_attribute)
 
     @property
@@ -128,6 +132,9 @@ class NameLookupDBDavMixIn(object):
             except ObjectDoesNotExist:
                 continue
 
+    def get_model_kwargs(self, **kwargs):
+        return kwargs or {}
+
     def get_model_by_path(self, model, *path):
         if not path:
             return None
@@ -140,7 +147,7 @@ class NameLookupDBDavMixIn(object):
         args.append(Q(**{"__".join([self.collection_attribute] * len(path)): None}))
         related = ["__".join([self.collection_attribute] * i) for i in range(1, len(path))]
 
-        qs = model.objects
+        qs = model.objects.filter(self.get_model_kwargs())
         if related:
             qs = qs.select_related(*related)
         try:
