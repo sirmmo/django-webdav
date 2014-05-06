@@ -21,7 +21,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 version = __import__('djangodav').get_version()
@@ -35,7 +35,7 @@ setup(
     author='Alexander Klimenko',
     author_email='alex@erix.ru',
     url='https://github.com/meteozond/djangodav',
-    packages=['djangodav'],
+    packages=find_packages(),
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Environment :: Web Environment',
