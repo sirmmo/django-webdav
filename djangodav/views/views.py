@@ -105,7 +105,10 @@ class DavView(View):
 
     @cached_property
     def resource(self):
-        return self.resource_class(**self.get_resource_kwargs(path=self.path))
+        return self.get_resource(path=self.path)
+
+    def get_resource(self, **kwargs):
+        self.resource_class(**self.get_resource_kwargs(**kwargs))
 
     def get_depth(self, default='infinity'):
         depth = str(self.request.META.get('HTTP_DEPTH', default)).lower()
@@ -202,7 +205,7 @@ class DavView(View):
         created = not self.resource.exists
         self.resource.write(request)
         if created:
-            self.__dict__['resource'] = self.resource_class(self.resource.get_path())
+            self.__dict__['resource'] = self.get_resource(path=self.resource.get_path())
             return HttpResponseCreated()
         else:
             return HttpResponseNoContent()
@@ -215,7 +218,7 @@ class DavView(View):
         self.lock_class(self.resource).del_locks()
         self.resource.delete()
         response = HttpResponseNoContent()
-        self.__dict__['resource'] = self.resource_class(self.resource.get_path())
+        self.__dict__['resource'] = self.get_resource(path=self.resource.get_path())
         return response
 
     def mkcol(self, request, path, *args, **kwargs):
@@ -229,7 +232,7 @@ class DavView(View):
         if not self.has_access(self.resource, 'write'):
             return HttpResponseForbidden()
         self.resource.create_collection()
-        self.__dict__['resource'] = self.resource_class(self.resource.get_path())
+        self.__dict__['resource'] = self.get_resource(path=self.resource.get_path())
         return HttpResponseCreated()
 
     def relocate(self, request, path, method, *args, **kwargs):
@@ -245,7 +248,7 @@ class DavView(View):
         if sparts.scheme != dparts.scheme or sparts.netloc != dparts.netloc:
             return HttpResponseBadGateway('Source and destination must have the same scheme and host.')
         # adjust path for our base url:
-        dst = self.resource_class(dparts.path[len(self.base_url):])
+        dst = self.get_resource(path=dparts.path[len(self.base_url):])
         if not dst.get_parent().exists:
             return HttpResponseConflict()
         if not self.has_access(self.resource, 'write'):
