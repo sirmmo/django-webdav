@@ -51,9 +51,13 @@ class BaseDBDavResource(BaseDavResource):
         return getattr(self.obj, self.size_attribute)
 
     def get_created(self):
+        if self.is_root:
+            return now()
         return getattr(self.obj, self.created_attribute)
 
     def get_modified(self):
+        if self.is_root:
+            return now()
         return getattr(self.obj, self.modified_attribute)
 
     @property
