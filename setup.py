@@ -45,7 +45,7 @@ setup(
         'Programming Language :: Python',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
-    requires=["lxml", "Django>=1.3.0"],
+    install_requires=["lxml", "Django>=1.3.0"],
     tests_require=["Django>=1.3.0", "mock==1.0.1"],
     include_package_data=True,
     zip_safe=False,
