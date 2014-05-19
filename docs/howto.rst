@@ -11,8 +11,8 @@ Create simple filesystem webdav resource
 .. code:: python
 
     from django.conf import settings
-    from djangodav.base.resource import MetaEtagMixIn
-    from djangodav.fs.resource import DummyFSDAVResource
+    from djangodav.base.resources import MetaEtagMixIn
+    from djangodav.fs.resources import DummyFSDAVResource
 
     class MyDavResource(MetaEtagMixIn, DummyFSDAVResource):
         root = '/path/to/folder'
@@ -83,7 +83,7 @@ Create simple database webdav resource
     from hashlib import md5
 
     from django.utils.timezone import now
-    from djangodav.db.resource import NameLookupDBDavMixIn, BaseDBDavResource
+    from djangodav.db.resources import NameLookupDBDavMixIn, BaseDBDavResource
     from samples.db.models import CollectionModel, ObjectModel
 
     class MyDBDavResource(NameLookupDBDavMixIn, BaseDBDavResource):
@@ -125,8 +125,8 @@ Create simple database webdav resource
 
 .. code:: python
 
-    from djangodav.acl import FullAcl
-    from djangodav.lock import DummyLock
+    from djangodav.acls import FullAcl
+    from djangodav.locks import DummyLock
 
     from djangodav.views import DavView
 
