@@ -70,7 +70,7 @@ class BaseDBDavResource(BaseDavResource):
 
     @cached_property
     def exists(self):
-        return self.is_root or self.obj
+        return self.is_root or bool(self.obj)
 
     def get_model_kwargs(self, **kwargs):
         return kwargs or {}
