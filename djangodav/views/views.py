@@ -59,9 +59,8 @@ class DavView(View):
             resp = e.response
         if not 'Allow' in resp:
             methods = self._allowed_methods()
-            if not methods:
-                return HttpResponseForbidden()
-            resp['Allow'] = ", ".join(methods)
+            if methods:
+                resp['Allow'] = ", ".join(methods)
         if not 'Date' in resp:
             resp['Date'] = rfc1123_date(now())
         if self.server_header:
@@ -84,9 +83,9 @@ class DavView(View):
     def _allowed_methods(self):
         allowed = ['OPTIONS']
         if not self.resource.exists:
-            res = self.resource.get_parent()
-            if not (res.is_collection and res.exists):
-                return None
+            parent = self.resource.get_parent()
+            if not (parent.is_collection and parent.exists):
+                return []
             return allowed + ['PUT', 'MKCOL']
         allowed += ['HEAD', 'GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK']
         if self.resource.is_object:
