@@ -280,7 +280,7 @@ class TestView(TestCase):
         v = DavView()
         parent = MissingMockCollection('/path/to/obj')
         v.__dict__['resource'] = MissingMockCollection('/path/', get_parent=Mock(return_value=parent))
-        self.assertEqual(v._allowed_methods(), None)
+        self.assertEqual(v._allowed_methods(), [])
 
     def test_options_root(self):
         path = '/'
