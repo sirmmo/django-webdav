@@ -37,7 +37,7 @@ setup(
     url='https://github.com/meteozond/djangodav',
     packages=find_packages(),
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
         'Framework :: Django',
         'License :: OSI Approved :: GNU Affero General Public License v3',
