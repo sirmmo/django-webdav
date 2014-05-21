@@ -41,7 +41,9 @@ class DavView(View):
 
         meta = request.META.get
         self.xbody = kwargs['xbody'] = None
-        if meta('CONTENT_TYPE', '').startswith('text/xml') and int(meta('CONTENT_LENGTH', 0)) > 0:
+        if (request.method.lower() != 'put'
+            and meta('CONTENT_TYPE', '').startswith('text/xml')
+            and int(meta('CONTENT_LENGTH', 0)) > 0):
             self.xbody = kwargs['xbody'] = etree.XPathDocumentEvaluator(
                 etree.parse(request, etree.XMLParser(ns_clean=True)),
                 namespaces=WEBDAV_NSMAP
