@@ -160,17 +160,16 @@ class NameLookupDBDavMixIn(object):
     def copy_object(self, destination):
         self.obj.pk = None
         name = destination.path[-1]
-        collection = self.clone(destination.get_path()).obj
+        collection = self.clone(destination.get_parent_path()).obj
         setattr(self.obj, self.name_attribute, name)
         setattr(self.obj, self.collection_attribute, collection)
         setattr(self.obj, self.created_attribute, now())
         setattr(self.obj, self.modified_attribute, now())
-        self.obj.save(update_fields=[self.name_attribute, self.collection_attribute, self.created_attribute,
-                                     self.modified_attribute, 'pk'])
+        self.obj.save(force_insert=True)
 
     def move_object(self, destination):
         name = destination.path[-1]
-        collection = self.clone(destination.get_path()).obj
+        collection = self.clone(destination.get_parent_path()).obj
         setattr(self.obj, self.name_attribute, name)
         setattr(self.obj, self.collection_attribute, collection)
         setattr(self.obj, self.modified_attribute, now())
