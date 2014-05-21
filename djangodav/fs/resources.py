@@ -151,7 +151,7 @@ class RedirectFSDavResource(BaseFSDavResource):
 
     def read(self):
         response = HttpResponse()
-        response['X-Accel-Redirect'] = url_join(self.prefix, self.get_path().path.encode('utf-8'))
+        response['X-Accel-Redirect'] = url_join(self.prefix, self.get_path().encode('utf-8'))
         response['X-Accel-Charset'] = 'utf-8'
         response['Content-Type'] = mimetypes.guess_type(self.displayname)
         response['Content-Length'] = self.getcontentlength
