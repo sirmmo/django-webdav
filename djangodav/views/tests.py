@@ -419,21 +419,21 @@ class TestView(TestCase):
 
     def test_delete_exists(self):
         target = self.sub_object
-        v = DavView(path=target.get_displaypath(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
+        v = DavView(path=target.get_path(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
         v.__dict__['resource'] = target
         request = HttpRequest()
         target.delete = Mock()
-        resp = v.delete(request, target.get_displaypath())
+        resp = v.delete(request, target.get_path())
         self.assertTrue(target.delete.called)
         self.assertEqual(204, resp.status_code)
 
     def test_delete_missing(self):
         target = self.missing_sub_object
-        v = DavView(path=target.get_displaypath(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
+        v = DavView(path=target.get_path(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
         v.__dict__['resource'] = target
         request = HttpRequest()
         target.delete = Mock()
-        resp = v.delete(request, target.get_displaypath())
+        resp = v.delete(request, target.get_path())
         self.assertFalse(target.delete.called)
         self.assertEqual(404, resp.status_code)
 
@@ -442,13 +442,13 @@ class TestView(TestCase):
         src.copy = Mock(return_value=None)
         dst = self.missing_sub_object
         request = HttpRequest()
-        request.META['HTTP_DESTINATION'] = "http://testserver%s" % dst.get_displaypath()
+        request.META['HTTP_DESTINATION'] = "http://testserver%s" % dst.get_path()
         request.META['SERVER_NAME'] = 'testserver'
         request.META['SERVER_PORT'] = '80'
-        v = DavView(base_url='http://testserver', request=request, path=src.get_displaypath(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
+        v = DavView(base_url='http://testserver', request=request, path=src.get_path(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
         v.resource_class = Mock(return_value=dst)
         v.__dict__['resource'] = src
-        resp = v.copy(request, src.get_displaypath(), None)
+        resp = v.copy(request, src.get_path(), None)
         self.assertEqual(201, resp.status_code)
         self.assertTrue(src.copy.called)
 
@@ -458,13 +458,13 @@ class TestView(TestCase):
         dst = self.blank_collection
         dst.delete = Mock(return_value=None)
         request = HttpRequest()
-        request.META['HTTP_DESTINATION'] = "http://testserver%s" % dst.get_displaypath()
+        request.META['HTTP_DESTINATION'] = "http://testserver%s" % dst.get_escaped_path()
         request.META['SERVER_NAME'] = 'testserver'
         request.META['SERVER_PORT'] = '80'
-        v = DavView(base_url='http://testserver', request=request, path=src.get_displaypath(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
+        v = DavView(base_url='http://testserver', request=request, path=src.get_path(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
         v.resource_class = Mock(return_value=dst)
         v.__dict__['resource'] = src
-        resp = v.copy(request, src.get_displaypath(), None)
+        resp = v.copy(request, src.get_path(), None)
         self.assertEqual(204, resp.status_code)
         self.assertTrue(src.copy.called)
         self.assertTrue(dst.delete.called)
@@ -475,13 +475,13 @@ class TestView(TestCase):
         dst = self.missing_sub_object
         dst.delete = Mock(return_value=None)
         request = HttpRequest()
-        request.META['HTTP_DESTINATION'] = "http://testserver%s" % dst.get_displaypath()
+        request.META['HTTP_DESTINATION'] = "http://testserver%s" % dst.get_escaped_path()
         request.META['SERVER_NAME'] = 'testserver'
         request.META['SERVER_PORT'] = '80'
-        v = DavView(base_url='http://testserver', request=request, path=src.get_displaypath(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
+        v = DavView(base_url='http://testserver', request=request, path=src.get_path(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
         v.resource_class = Mock(return_value=dst)
         v.__dict__['resource'] = src
-        resp = v.move(request, src.get_displaypath(), None)
+        resp = v.move(request, src.get_path(), None)
         self.assertEqual(201, resp.status_code)
         self.assertTrue(src.move.called)
         self.assertFalse(dst.delete.called)
@@ -492,13 +492,13 @@ class TestView(TestCase):
         dst = self.blank_collection
         dst.delete = Mock(return_value=None)
         request = HttpRequest()
-        request.META['HTTP_DESTINATION'] = "http://testserver%s" % dst.get_displaypath()
+        request.META['HTTP_DESTINATION'] = "http://testserver%s" % dst.get_escaped_path()
         request.META['SERVER_NAME'] = 'testserver'
         request.META['SERVER_PORT'] = '80'
-        v = DavView(base_url='http://testserver', request=request, path=src.get_displaypath(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
+        v = DavView(base_url='http://testserver', request=request, path=src.get_path(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
         v.resource_class = Mock(return_value=dst)
         v.__dict__['resource'] = src
-        resp = v.move(request, src.get_displaypath(), None)
+        resp = v.move(request, src.get_path(), None)
         self.assertEqual(204, resp.status_code)
         self.assertTrue(src.move.called)
         self.assertTrue(dst.delete.called)
