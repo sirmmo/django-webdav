@@ -374,7 +374,7 @@ class DavView(View):
         if get_prop_names:
             responses = [
                 D.response(
-                    D.href(url_join(self.base_url, child.get_path())),
+                    D.href(url_join(self.base_url, child.get_escaped_path())),
                     D.propstat(
                         D.prop(*[
                             D(name) for name in child.ALL_PROPS
@@ -387,7 +387,7 @@ class DavView(View):
         else:
             responses = [
                 D.response(
-                    D.href(url_join(self.base_url, child.get_path())),
+                    D.href(url_join(self.base_url, child.get_escaped_path())),
                     D.propstat(
                         D.prop(
                             *get_property_tag_list(child, *(get_prop if get_prop else child.ALL_PROPS))

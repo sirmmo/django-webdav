@@ -34,11 +34,11 @@
 </tr>
 <tr><th colspan="5"><hr></th></tr>
 <tr>
-    <td><a href="{{ base_url }}{% if not res.get_parent %}/{% endif %}{{ res.get_parent.get_path }}">Parent Directory</a></td>
+    <td><a href="{{ base_url }}{% if not res.get_escaped_path %}/{% endif %}{{ res.get_parent.get_escaped_path }}">Parent Directory</a></td>
 </tr>
 {% for child in res.get_children %}
 <tr>
-    <td><a href="{{ base_url }}{{ child.get_path }}">{{ child.displayname }}</a></td>
+    <td><a href="{{ base_url }}{{ child.get_escaped_path }}">{{ child.displayname }}</a></td>
     <td align="right">{{ child.get_created|date:"d-M-Y H:i" }}</td>
     <td align="right">{{ child.get_modified|date:"d-M-Y H:i" }}</td>
     <td align="right">{{ child.getcontentlength|filesizeformat }}</td>

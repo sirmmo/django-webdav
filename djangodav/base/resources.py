@@ -40,11 +40,11 @@ class BaseDavResource(object):
             self.path = path.split("/")
 
     def get_path(self):
+        return ("/" if self.path else "") + "/".join(self.path) + ("/" * (self.is_collection))
+
+    def get_escaped_path(self):
         path = [urlquote(p) for p in self.path]
         return ("/" if path else "") + "/".join(path) + ("/" * self.is_collection)
-
-    def get_displaypath(self):
-        return ("/" if self.path else "") + "/".join(self.path) + ("/" * (self.is_collection))
 
     @property
     def displayname(self):
