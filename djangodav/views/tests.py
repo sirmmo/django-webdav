@@ -143,7 +143,7 @@ class TestView(TestCase):
                         D.status("HTTP/1.1 200 OK")
                     )
                 ),
-            ), pretty_print=True, xml_declaration=True)
+            ), pretty_print=True, xml_declaration=True, encoding='utf-8')
         )
 
     def test_propfind_exact_names(self):
@@ -175,7 +175,7 @@ class TestView(TestCase):
                         D.status("HTTP/1.1 200 OK")
                     )
                 ),
-            ), pretty_print=True, xml_declaration=True)
+            ), pretty_print=True, xml_declaration=True, encoding='utf-8')
         )
 
     def test_propfind_allprop(self):
@@ -207,7 +207,7 @@ class TestView(TestCase):
                         D.status("HTTP/1.1 200 OK")
                     )
                 ),
-            ), pretty_print=True, xml_declaration=True)
+            ), pretty_print=True, xml_declaration=True, encoding='utf-8')
         )
 
 
@@ -240,7 +240,7 @@ class TestView(TestCase):
                         D.status("HTTP/1.1 200 OK")
                     )
                 ),
-            ), pretty_print=True, xml_declaration=True)
+            ), pretty_print=True, xml_declaration=True, encoding='utf-8')
         )
 
     def test_dispatch(self):
