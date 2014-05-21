@@ -199,7 +199,7 @@ class DavView(View):
         if self.resource.is_collection:
             return HttpResponseForbidden()
         if not self.resource.exists and not self.has_access(parent, 'write'):
-                return HttpResponseForbidden()
+            return HttpResponseForbidden()
         if self.resource.exists and not self.has_access(self.resource, 'write'):
             return HttpResponseForbidden()
         created = not self.resource.exists
