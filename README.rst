@@ -3,6 +3,8 @@ DjangoDav
 
 Production ready WebDav extension for Django.
 
+.. image:: https://travis-ci.org/meteozond/djangodav.svg
+
 Motivation
 ----------
 
