@@ -25,6 +25,14 @@ from djangodav.responses import HttpResponseUnAuthorized
 from rest_framework.exceptions import APIException
 
 
+class RequestWrapper(object):
+    """ simulates django-rest-api request wrapper """
+    def __init__(self, request):
+        self._request = request
+    def __getattr__(self, attr):
+        return getattr(self._request, attr)
+    
+    
 class RestAuthViewMixIn(object):
     authentications = NotImplemented
 
@@ -34,11 +42,14 @@ class RestAuthViewMixIn(object):
             user_auth_tuple = None
             for auth in self.authentications:
                 try:
-                    user_auth_tuple = auth.authenticate(request)
+                    user_auth_tuple = auth.authenticate(RequestWrapper(request))
                 except APIException as e:
                     return HttpResponse(e.detail, status=e.status_code)
                 else:
-                    break
+                    if user_auth_tuple is None:
+                        continue # try next authenticator 
+                    else:
+                        break    # we got auth, so stop trying
 
             if not user_auth_tuple is None:
                 user, auth = user_auth_tuple
