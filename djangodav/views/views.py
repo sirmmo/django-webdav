@@ -33,6 +33,8 @@ class DavView(View):
         get_version(django_version),
         get_version(python_version)
     )
+    xml_pretty_print = False
+    xml_encoding = 'utf-8'
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, path, *args, **kwargs):
@@ -339,7 +341,7 @@ class DavView(View):
             + ([owner_obj] if not owner_obj is None else [])
         ))
 
-        return HttpResponse(etree.tostring(body, pretty_print=True, xml_declaration=True, encoding='utf-8'), content_type='application/xml')
+        return self.build_xml_response(HttpResponse, body)
 
     def unlock(self, request, path, xbody=None, *args, **kwargss):
         if not self.has_access(self.resource, 'write'):
@@ -400,8 +402,7 @@ class DavView(View):
             ]
 
         body = D.multistatus(*responses)
-        response = HttpResponseMultiStatus(etree.tostring(body, pretty_print=True, xml_declaration=True, encoding='utf-8'))
-        return response
+        return self.build_xml_response(HttpResponseMultiStatus, body)
 
     def proppatch(self, request, path, xbody, *args, **kwargs):
         if not self.resource.exists:
@@ -421,4 +422,11 @@ class DavView(View):
                 ) for el in props]
             )
         )
-        return HttpResponseMultiStatus(etree.tostring(body, pretty_print=True, xml_declaration=True, encoding='utf-8'))
+        return self.build_xml_response(HttpResponseMultiStatus, body)
+
+    def build_xml_response(self, response_class, tree, **kwargs):
+        return response_class(
+            etree.tostring(tree, xml_declaration=True, pretty_print=self.xml_pretty_print, encoding=self.xml_encoding),
+            content_type='application/xml',
+            **kwargs
+        )

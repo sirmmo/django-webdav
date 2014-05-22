@@ -98,7 +98,7 @@ class TestView(TestCase):
         self.top_collection.get_descendants.return_value += [self.top_collection]
         request = Mock(META={})
         path = '/collection/'
-        v = DavView(base_url='/base/', path=path, request=request, acl_class=FullAcl)
+        v = DavView(base_url='/base/', path=path, request=request, acl_class=FullAcl, xml_pretty_print=True)
         v.__dict__['resource'] = self.top_collection
         resp = v.propfind(request, path, None)
         self.assertEqual(resp.status_code, 207)
@@ -150,7 +150,7 @@ class TestView(TestCase):
         self.sub_object.get_descendants.return_value += [self.sub_object]
         request = Mock(META={})
         path = 'collection/sub_object'
-        v = DavView(base_url='/base/', path=path, request=request, acl_class=FullAcl)
+        v = DavView(base_url='/base/', path=path, request=request, acl_class=FullAcl, xml_pretty_print=True)
         v.__dict__['resource'] = self.sub_object
         resp = v.propfind(request, path,
             etree.XPathDocumentEvaluator(ElementTree(
@@ -182,7 +182,7 @@ class TestView(TestCase):
         self.sub_object.get_descendants.return_value += [self.sub_object]
         request = Mock(META={})
         path = 'collection/sub_object'
-        v = DavView(base_url='/base/', path=path, request=request, acl_class=FullAcl)
+        v = DavView(base_url='/base/', path=path, request=request, acl_class=FullAcl, xml_pretty_print=True)
         v.__dict__['resource'] = self.sub_object
         resp = v.propfind(request, path,
             etree.XPathDocumentEvaluator(ElementTree(
@@ -215,7 +215,7 @@ class TestView(TestCase):
         self.sub_object.get_descendants.return_value += [self.sub_object]
         request = Mock(META={})
         path = 'collection/sub_object'
-        v = DavView(base_url='/base/', path=path, request=request, acl_class=FullAcl)
+        v = DavView(base_url='/base/', path=path, request=request, acl_class=FullAcl, xml_pretty_print=True)
         v.__dict__['resource'] = self.sub_object
         resp = v.propfind(request, path,
             etree.XPathDocumentEvaluator(ElementTree(
