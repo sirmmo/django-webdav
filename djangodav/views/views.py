@@ -81,13 +81,13 @@ class DavView(View):
         return response
 
     def _allowed_methods(self):
-        allowed = ['HEAD', 'OPTIONS']
+        allowed = ['HEAD', 'OPTIONS', 'PROPFIND']
         if not self.resource.exists:
             parent = self.resource.get_parent()
             if not (parent.is_collection and parent.exists):
                 return []
             return allowed + ['PUT', 'MKCOL']
-        allowed += ['GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK']
+        allowed += ['GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK']
         if self.resource.is_object:
             allowed += ['PUT']
         return allowed
