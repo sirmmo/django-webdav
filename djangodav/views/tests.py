@@ -263,18 +263,18 @@ class TestView(TestCase):
     def test_allowed_object(self):
         v = DavView()
         v.__dict__['resource'] = self.sub_object
-        self.assertEqual(v._allowed_methods(), ['OPTIONS', 'HEAD', 'GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK', 'PUT'])
+        self.assertListEqual(v._allowed_methods(), ['HEAD', 'OPTIONS', 'PROPFIND', 'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK', 'PUT'])
 
     def test_allowed_collection(self):
         v = DavView()
         v.__dict__['resource'] = self.top_collection
-        self.assertEqual(v._allowed_methods(), ['OPTIONS', 'HEAD', 'GET', 'DELETE', 'PROPFIND', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK'])
+        self.assertListEqual(v._allowed_methods(), ['HEAD', 'OPTIONS', 'PROPFIND', 'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK'])
 
     def test_allowed_missing_collection(self):
         v = DavView()
         parent = MockCollection('/path/to/obj')
         v.__dict__['resource'] = MissingMockCollection('/path/', get_parent=Mock(return_value=parent))
-        self.assertEqual(v._allowed_methods(), ['OPTIONS', 'PUT', 'MKCOL'])
+        self.assertListEqual(v._allowed_methods(), ['HEAD', 'OPTIONS', 'PROPFIND', 'PUT', 'MKCOL'])
 
     def test_allowed_missing_parent(self):
         v = DavView()
