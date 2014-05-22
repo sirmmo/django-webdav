@@ -37,6 +37,9 @@ class BaseDBDavResource(BaseDavResource):
     name_attribute = 'name'
     size_attribute = 'size'
 
+    select_collection_related = tuple()
+    select_object_related = tuple()
+
     def __init__(self, path, **kwargs):
         if 'obj' in kwargs:  # Accepting ready object to reduce db requests
             self.__dict__['obj'] = kwargs.pop('obj')
@@ -80,9 +83,13 @@ class BaseDBDavResource(BaseDavResource):
         if not self.exists or isinstance(self.obj, self.object_model):
             return
 
-        for model in [self.collection_model, self.object_model]:
+        models = [
+            [self.collection_model, self.select_collection_related],
+            [self.object_model, self.select_object_related]
+        ]
+        for model, related in models:
             kwargs = self.get_model_kwargs(**{self.collection_attribute: self.obj})
-            for child in model.objects.filter(**kwargs):
+            for child in model.objects.select_related(self.collection_attribute, *related).filter(**kwargs):
                 yield self.clone(
                     url_join(*(self.path + [child.name])),
                     obj=child    # Sending ready object to reduce db requests
