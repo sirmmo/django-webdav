@@ -120,9 +120,9 @@ class DummyReadFSDavResource(BaseFSDavResource):
 
 
 class DummyWriteFSDavResource(BaseFSDavResource):
-    def write(self, content):
+    def write(self, request):
         f = open(self.get_abs_path(), 'w')
-        f.write(content)
+        f.write(request.read())
         f.close()
 
 
