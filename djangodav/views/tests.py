@@ -289,7 +289,7 @@ class TestView(TestCase):
         resp = v.options(None, path)
         self.assertEqual(sorted(resp.items()), [
             ('Content-Length', '0'),
-            ('Content-Type', 'text/html'),
+            ('Content-Type', 'text/xml; charset="utf-8"'),
             ('DAV', '1,2'),
         ])
 
@@ -302,7 +302,7 @@ class TestView(TestCase):
             ('Allow', 'ALL'),
             ('Allow-Ranges', 'bytes'),
             ('Content-Length', '0'),
-            ('Content-Type', 'text/html'),
+            ('Content-Type', 'text/xml; charset="utf-8"'),
             ('DAV', '1,2'),
         ])
 
@@ -314,7 +314,7 @@ class TestView(TestCase):
         self.assertEqual(sorted(resp.items()), [
             ('Allow', 'ALL'),
             ('Content-Length', '0'),
-            ('Content-Type', 'text/html'),
+            ('Content-Type', 'text/xml; charset="utf-8"'),
             ('DAV', '1,2'),
         ])
 

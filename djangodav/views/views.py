@@ -14,7 +14,7 @@ from django.views.generic import View
 
 from djangodav.responses import ResponseException, HttpResponsePreconditionFailed, HttpResponseCreated, HttpResponseNoContent, \
     HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, HttpResponseNotImplemented, \
-    HttpResponseMultiStatus, HttpResponseLocked
+    HttpResponseMultiStatus, HttpResponseLocked, HttpResponse
 from djangodav.utils import WEBDAV_NSMAP, D, url_join, get_property_tag_list, rfc1123_date
 from djangodav import VERSION as djangodav_version
 from django import VERSION as django_version, get_version
@@ -77,7 +77,7 @@ class DavView(View):
     def options(self, request, path, *args, **kwargs):
         if not self.has_access(self.resource, 'read'):
             return HttpResponseForbidden()
-        response = HttpResponse(content_type='text/html')
+        response = self.build_xml_response()
         response['DAV'] = '1,2'
         response['Content-Length'] = '0'
         if self.path in ('/', '*'):
@@ -274,7 +274,7 @@ class DavView(View):
             dst.delete()
         errors = getattr(self.resource, method)(dst, *args, **kwargs)
         if errors:
-            return HttpResponseMultiStatus() # WAT?
+            return self.build_xml_response(response_class=HttpResponseMultiStatus) # WAT?
         if dst_exists:
             return HttpResponseNoContent()
         return HttpResponseCreated()
@@ -346,7 +346,7 @@ class DavView(View):
             + ([owner_obj] if not owner_obj is None else [])
         ))
 
-        return self.build_xml_response(HttpResponse, body)
+        return self.build_xml_response(body)
 
     def unlock(self, request, path, xbody=None, *args, **kwargss):
         if not self.has_access(self.resource, 'write'):
@@ -407,7 +407,7 @@ class DavView(View):
             ]
 
         body = D.multistatus(*responses)
-        return self.build_xml_response(HttpResponseMultiStatus, body)
+        return self.build_xml_response(body, HttpResponseMultiStatus)
 
     def proppatch(self, request, path, xbody, *args, **kwargs):
         if not self.resource.exists:
@@ -427,11 +427,20 @@ class DavView(View):
                 ) for el in props]
             )
         )
-        return self.build_xml_response(HttpResponseMultiStatus, body)
+        return self.build_xml_response(body, HttpResponseMultiStatus)
 
-    def build_xml_response(self, response_class, tree, **kwargs):
+    def build_xml_response(self, tree=None, response_class=HttpResponse, **kwargs):
+        if not tree is None:
+            content = etree.tostring(
+                tree,
+                xml_declaration=True,
+                pretty_print=self.xml_pretty_print,
+                encoding=self.xml_encoding
+            )
+        else:
+            content = b''
         return response_class(
-            etree.tostring(tree, xml_declaration=True, pretty_print=self.xml_pretty_print, encoding=self.xml_encoding),
-            content_type='application/xml',
+            content,
+            content_type='text/xml; charset="%s"' % self.xml_encoding,
             **kwargs
         )
