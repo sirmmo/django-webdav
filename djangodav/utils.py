@@ -59,7 +59,7 @@ def get_property_tag(res, name):
             return D(name, D.collection)
         return D(name)
     try:
-        if getattr(res, name):
+        if hasattr(res, name):
             return D(name, unicode(getattr(res, name)))
     except AttributeError:
         return
