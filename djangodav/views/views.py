@@ -38,13 +38,18 @@ class DavView(View):
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, path, *args, **kwargs):
-        self.path = path
-        self.base_url = request.META['PATH_INFO'][:-len(self.path)]
+        if path:
+            self.path = path
+            self.base_url = request.META['PATH_INFO'][:-len(self.path)]
+        else:
+            self.path = '/'
+            self.base_url = request.META['PATH_INFO']
 
         meta = request.META.get
         self.xbody = kwargs['xbody'] = None
         if (request.method.lower() != 'put'
             and meta('CONTENT_TYPE', '').startswith('text/xml')
+            and meta('CONTENT_LENGTH', 0) != ''
             and int(meta('CONTENT_LENGTH', 0)) > 0):
             self.xbody = kwargs['xbody'] = etree.XPathDocumentEvaluator(
                 etree.parse(request, etree.XMLParser(ns_clean=True)),
