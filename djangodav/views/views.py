@@ -403,7 +403,7 @@ class DavView(View):
         response = HttpResponseMultiStatus(etree.tostring(body, pretty_print=True, xml_declaration=True, encoding='utf-8'))
         return response
 
-    def proppatch(self, request, path, *args, **kwargs):
+    def proppatch(self, request, path, xbody, *args, **kwargs):
         if not self.resource.exists:
             return HttpResponseNotFound()
         if not self.has_access(self.resource, 'write'):
@@ -411,4 +411,14 @@ class DavView(View):
         depth = self.get_depth(default="0")
         if depth != 0:
             return HttpResponseBadRequest('Invalid depth header value %s' % depth)
-        return HttpResponseNotImplemented()
+        props = xbody('/D:propertyupdate/D:set/D:prop/*')
+        body = D.multistatus(
+            D.response(
+                D.href(url_join(self.base_url, self.resource.get_escaped_path())),
+                *[D.propstat(
+                    D.status('HTTP/1.1 200 OK'),
+                    D.prop(el.tag)
+                ) for el in props]
+            )
+        )
+        return HttpResponseMultiStatus(etree.tostring(body, pretty_print=True, xml_declaration=True, encoding='utf-8'))
