@@ -22,5 +22,5 @@
 from functools import partial
 from django import get_version as base_get_version
 
-VERSION = (0, 0, 1, 'beta', 4)
+VERSION = (0, 0, 1, 'beta', 5)
 get_version = partial(base_get_version, VERSION)
