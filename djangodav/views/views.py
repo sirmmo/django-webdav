@@ -118,7 +118,7 @@ class DavView(View):
     def get_resource(self, **kwargs):
         return self.resource_class(**self.get_resource_kwargs(**kwargs))
 
-    def get_depth(self, default='infinity'):
+    def get_depth(self, default='1'):
         depth = str(self.request.META.get('HTTP_DEPTH', default)).lower()
         if not depth in ('0', '1', 'infinity'):
             raise ResponseException(HttpResponseBadRequest('Invalid depth header value %s' % depth))
