@@ -117,7 +117,7 @@ class NameLookupDBDavMixIn(object):
     def get_object(self):
         parent = self.get_model_by_path(self.collection_model, *self.path[:-1])
         qs = self.object_model.objects.select_related(self.collection_attribute)
-        return qs.get(**{self.collection_attribute: parent, 'name': self.path[-1]})
+        return qs.get(**self.get_model_kwargs(**{self.collection_attribute: parent, 'name': self.path[-1]}))
 
     def get_collection(self):
         return self.get_model_by_path(self.collection_model, *self.path)
