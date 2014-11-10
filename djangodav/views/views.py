@@ -377,7 +377,7 @@ class DavView(View):
             if int(bool(get_prop)) + int(bool(get_all_props)) + int(bool(get_prop_names)) != 1:
                 return HttpResponseBadRequest()
 
-        children = self.resource.get_descendants(depth=self.get_depth(), include_self=not self.resource.is_root)
+        children = self.resource.get_descendants(depth=self.get_depth())
 
         if get_prop_names:
             responses = [
