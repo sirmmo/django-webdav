@@ -133,7 +133,7 @@ class NameLookupDBDavMixIn(object):
         if not self.path:
             return None
 
-        if not self.possible_collection:  # Reducing queries
+        if self.possible_collection:  # Reducing queries
             attempts = [self.get_collection, self.get_object]
         else:
             attempts = [self.get_object, self.get_collection]
