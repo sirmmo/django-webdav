@@ -1,4 +1,8 @@
-import urllib, urlparse, re
+import urllib, re
+try:
+    import urlparse
+except ImportError:
+    from urllib import parse as urlparse
 from sys import version_info as python_version
 from django.utils.timezone import now
 from lxml import etree
