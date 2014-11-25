@@ -65,7 +65,7 @@ class DavView(View):
             handler = self.http_method_not_allowed
         try:
             resp = handler(request, self.path, *args, **kwargs)
-        except ResponseException, e:
+        except ResponseException as e:
             resp = e.response
         if not 'Allow' in resp:
             methods = self._allowed_methods()
