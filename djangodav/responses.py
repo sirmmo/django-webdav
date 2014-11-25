@@ -19,8 +19,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 
-
-import httplib
+try:
+    import httplib
+except ImportError:
+    from http import client as httplib
 from django.http import HttpResponse
 
 
