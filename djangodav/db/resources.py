@@ -37,8 +37,8 @@ class BaseDBDavResource(BaseDavResource):
     name_attribute = 'name'
     size_attribute = 'size'
 
-    select_collection_related = tuple()
-    select_object_related = tuple()
+    collection_select_related = tuple()
+    object_select_related = tuple()
 
     def __init__(self, path, **kwargs):
         if 'obj' in kwargs:  # Accepting ready object to reduce db requests
@@ -84,8 +84,8 @@ class BaseDBDavResource(BaseDavResource):
             return
 
         models = [
-            [self.collection_model, self.select_collection_related],
-            [self.object_model, self.select_object_related]
+            [self.collection_model, self.collection_select_related],
+            [self.object_model, self.object_select_related]
         ]
         for model, related in models:
             kwargs = self.get_model_kwargs(**{self.collection_attribute: self.obj})
@@ -115,12 +115,10 @@ class NameLookupDBDavMixIn(object):
         super(NameLookupDBDavMixIn, self).__init__(path, **kwargs)
 
     def get_object(self):
-        parent = self.get_model_by_path(self.collection_model, *self.path[:-1])
-        qs = self.object_model.objects.select_related(self.collection_attribute)
-        return qs.get(**self.get_model_kwargs(**{self.collection_attribute: parent, 'name': self.path[-1]}))
+        return self.get_model_by_path('object', self.path)
 
     def get_collection(self):
-        return self.get_model_by_path(self.collection_model, *self.path)
+        return self.get_model_by_path('collection', self.path)
 
     def create_collection(self):
         name = self.path[-1]
@@ -144,7 +142,7 @@ class NameLookupDBDavMixIn(object):
             except ObjectDoesNotExist:
                 continue
 
-    def get_model_by_path(self, model, *path):
+    def get_model_by_path(self, model_attr, path):
         if not path:
             return None
 
@@ -155,14 +153,15 @@ class NameLookupDBDavMixIn(object):
             i += 1
         args.append(Q(**{"__".join([self.collection_attribute] * len(path)): None}))
         related = ["__".join([self.collection_attribute] * i) for i in range(1, len(path))]
+        related += getattr(self, "%s_select_related" % model_attr)
 
-        qs = model.objects.filter(**self.get_model_kwargs())
+        qs = getattr(self, "%s_model" % model_attr).objects.filter(**self.get_model_kwargs())
         if related:
             qs = qs.select_related(*related)
         try:
             return qs.filter(reduce(and_, args))[0]
         except IndexError:
-            raise model.DoesNotExist()
+            raise qs.model.DoesNotExist()
 
     def copy_object(self, destination):
         self.obj.pk = None
