@@ -81,7 +81,11 @@ class BaseFSDavResource(BaseDavResource):
     def get_children(self):
         """Return an iterator of all direct children of this resource."""
         for child in os.listdir(self.get_abs_path()):
-            if not isinstance(child, unicode):
+            try:
+                is_unicode = isinstance(child, unicode)
+            except NameError:  # Python 3 fix
+                is_unicode = isinstance(child, str)
+            if not is_unicode:
                 child = child.decode(fs_encoding)
             yield self.clone(url_join(*(self.path + [child])))
 
