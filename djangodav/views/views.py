@@ -255,7 +255,7 @@ class DavView(View):
             return HttpResponseNotFound()
         if not self.has_access(self.resource, 'read'):
             return self.no_access()
-        dst = urllib.unquote(request.META.get('HTTP_DESTINATION', '')).decode(self.xml_encoding)
+        dst = urlparse.unquote(request.META.get('HTTP_DESTINATION', '')).decode(self.xml_encoding)
         if not dst:
             return HttpResponseBadRequest('Destination header missing.')
         dparts = urlparse.urlparse(dst)
