@@ -22,6 +22,7 @@
 
 import datetime, time, calendar
 from wsgiref.handlers import format_date_time
+from django.utils.feedgenerator import rfc2822_date
 
 try:
     from email.utils import parsedate_tz
@@ -101,19 +102,16 @@ def ns_join(ns, name):
     return '{%s:}%s' % (ns, name)
 
 
-def rfc3339_date(date):
-    if not date:
+def rfc3339_date(dt):
+    if not dt:
         return ''
-    if not isinstance(date, datetime.date):
-        date = datetime.date.fromtimestamp(date)
-    date = date + datetime.timedelta(seconds=-time.timezone)
-    if time.daylight:
-        date += datetime.timedelta(seconds=time.altzone)
-    return date.strftime('%Y-%m-%dT%H:%M:%SZ')
+    return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
-def rfc1123_date(date):
-    return format_date_time(time.mktime(date.timetuple()))
+def rfc1123_date(dt):
+    if not dt:
+        return ''
+    return rfc2822_date(dt)
 
 
 def parse_time(timestring):

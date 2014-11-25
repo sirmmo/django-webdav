@@ -19,14 +19,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from datetime import datetime
+from django.utils.timezone import utc
 from djangodav.base.resources import BaseDavResource
 from mock import Mock, MagicMock
 
 
 class MockResource(MagicMock, BaseDavResource):
     exists = True
-    get_created = Mock(return_value=datetime(1983, 12, 24))
-    get_modified = Mock(return_value=datetime(2014, 12, 24))
+    get_created = Mock(return_value=datetime(1983, 12, 24, 6, tzinfo=utc))
+    get_modified = Mock(return_value=datetime(2014, 12, 24, 6, tzinfo=utc))
     getcontentlength = 0
 
     def __init__(self, path, *args, **kwargs):

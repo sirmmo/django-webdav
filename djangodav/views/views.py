@@ -1,9 +1,9 @@
-import mimetypes, urllib, urlparse, re
+import urllib, urlparse, re
 from sys import version_info as python_version
 from django.utils.timezone import now
 from lxml import etree
 
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseNotAllowed, HttpResponseBadRequest, \
+from django.http import HttpResponseForbidden, HttpResponseNotFound, HttpResponseNotAllowed, HttpResponseBadRequest, \
     HttpResponseNotModified, HttpResponseRedirect
 from django.utils.decorators import method_decorator
 from django.utils.functional import cached_property
@@ -13,7 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
 from djangodav.responses import ResponseException, HttpResponsePreconditionFailed, HttpResponseCreated, HttpResponseNoContent, \
-    HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, HttpResponseNotImplemented, \
+    HttpResponseConflict, HttpResponseMediatypeNotSupported, HttpResponseBadGateway, \
     HttpResponseMultiStatus, HttpResponseLocked, HttpResponse
 from djangodav.utils import WEBDAV_NSMAP, D, url_join, get_property_tag_list, rfc1123_date
 from djangodav import VERSION as djangodav_version
@@ -35,6 +35,9 @@ class DavView(View):
     )
     xml_pretty_print = False
     xml_encoding = 'utf-8'
+
+    def no_access(self):
+        return HttpResponseForbidden()
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, path, *args, **kwargs):
@@ -76,7 +79,7 @@ class DavView(View):
 
     def options(self, request, path, *args, **kwargs):
         if not self.has_access(self.resource, 'read'):
-            return HttpResponseForbidden()
+            return self.no_access()
         response = self.build_xml_response()
         response['DAV'] = '1,2'
         response['Content-Length'] = '0'
@@ -183,7 +186,7 @@ class DavView(View):
         acl = self.get_access(self.resource)
         if self.resource.is_object:
             if not acl.read:
-                return HttpResponseForbidden()
+                return self.no_access()
             if not head:
                 response['Content-Length'] = self.resource.getcontentlength
                 response.content = self.resource.read()
@@ -191,7 +194,7 @@ class DavView(View):
             response['ETag'] = self.resource.getetag
         else:
             if not acl.read:
-                return HttpResponseForbidden()
+                return self.no_access()
             if not head:
                 response = render_to_response(self.template_name, {'res': self.resource, 'base_url': self.base_url})
         response['Last-Modified'] = self.resource.getlastmodified
@@ -205,11 +208,11 @@ class DavView(View):
         if not parent.exists:
             return HttpResponseNotFound()
         if self.resource.is_collection:
-            return HttpResponseForbidden()
+            return self.no_access()
         if not self.resource.exists and not self.has_access(parent, 'write'):
-            return HttpResponseForbidden()
+            return self.no_access()
         if self.resource.exists and not self.has_access(self.resource, 'write'):
-            return HttpResponseForbidden()
+            return self.no_access()
         created = not self.resource.exists
         self.resource.write(request)
         if created:
@@ -222,7 +225,7 @@ class DavView(View):
         if not self.resource.exists:
             return HttpResponseNotFound()
         if not self.has_access(self.resource, 'delete'):
-            return HttpResponseForbidden()
+            return self.no_access()
         self.lock_class(self.resource).del_locks()
         self.resource.delete()
         response = HttpResponseNoContent()
@@ -238,7 +241,7 @@ class DavView(View):
         if length and int(length) != 0:
             return HttpResponseMediatypeNotSupported()
         if not self.has_access(self.resource, 'write'):
-            return HttpResponseForbidden()
+            return self.no_access()
         self.resource.create_collection()
         self.__dict__['resource'] = self.get_resource(path=self.resource.get_path())
         return HttpResponseCreated()
@@ -247,7 +250,7 @@ class DavView(View):
         if not self.resource.exists:
             return HttpResponseNotFound()
         if not self.has_access(self.resource, 'read'):
-            return HttpResponseForbidden()
+            return self.no_access()
         dst = urllib.unquote(request.META.get('HTTP_DESTINATION', '')).decode(self.xml_encoding)
         if not dst:
             return HttpResponseBadRequest('Destination header missing.')
@@ -260,7 +263,7 @@ class DavView(View):
         if not dst.get_parent().exists:
             return HttpResponseConflict()
         if not self.has_access(self.resource, 'write'):
-            return HttpResponseForbidden()
+            return self.no_access()
         overwrite = request.META.get('HTTP_OVERWRITE', 'T')
         if overwrite not in ('T', 'F'):
             return HttpResponseBadRequest('Overwrite header must be T or F.')
@@ -287,13 +290,13 @@ class DavView(View):
 
     def move(self, request, path, xbody):
         if not self.has_access(self.resource, 'delete'):
-            return HttpResponseForbidden()
+            return self.no_access()
         return self.relocate(request, path, 'move')
 
     def lock(self, request, path, xbody=None, *args, **kwargs):
         # TODO Lock refreshing
         if not self.has_access(self.resource, 'write'):
-            return HttpResponseForbidden()
+            return self.no_access()
 
         if not xbody:
             return HttpResponseBadRequest('Lockinfo required')
@@ -350,24 +353,24 @@ class DavView(View):
 
     def unlock(self, request, path, xbody=None, *args, **kwargss):
         if not self.has_access(self.resource, 'write'):
-            return HttpResponseForbidden()
+            return self.no_access()
 
         token = request.META.get('HTTP_LOCK_TOKEN')
         if not token:
             return HttpResponseBadRequest('Lock token required')
         if not self.lock_class(self.resource).release(token):
-            return HttpResponseForbidden()
+            return self.no_access()
         return HttpResponseNoContent()
 
     def propfind(self, request, path, xbody=None, *args, **kwargs):
         if not self.has_access(self.resource, 'read'):
-            return HttpResponseForbidden()
+            return self.no_access()
 
         if not self.resource.exists:
             return HttpResponseNotFound()
 
         if not self.get_access(self.resource):
-            return HttpResponseForbidden()
+            return self.no_access()
 
         get_all_props, get_prop, get_prop_names = True, False, False
         if xbody:
@@ -413,7 +416,7 @@ class DavView(View):
         if not self.resource.exists:
             return HttpResponseNotFound()
         if not self.has_access(self.resource, 'write'):
-            return HttpResponseForbidden()
+            return self.no_access()
         depth = self.get_depth(default="0")
         if depth != 0:
             return HttpResponseBadRequest('Invalid depth header value %s' % depth)

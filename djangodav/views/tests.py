@@ -109,8 +109,8 @@ class TestView(TestCase):
                     D.propstat(
                         D.prop(
                             D.getcontentlength("42"),
-                            D.creationdate("1983-12-23T23:00:00Z"),
-                            D.getlastmodified("Wed, 24 Dec 2014 06:00:00 GMT"),
+                            D.creationdate("1983-12-24T06:00:00Z"),
+                            D.getlastmodified("Wed, 24 Dec 2014 06:00:00 +0000"),
                             D.resourcetype(),
                             D.displayname("sub_object"),
                         ),
@@ -122,8 +122,8 @@ class TestView(TestCase):
                     D.propstat(
                         D.prop(
                             D.getcontentlength("0"),
-                            D.creationdate("1983-12-23T23:00:00Z"),
-                            D.getlastmodified("Wed, 24 Dec 2014 06:00:00 GMT"),
+                            D.creationdate("1983-12-24T06:00:00Z"),
+                            D.getlastmodified("Wed, 24 Dec 2014 06:00:00 +0000"),
                             D.resourcetype(D.collection()),
                             D.displayname("sub_colection"),
                         ),
@@ -135,8 +135,8 @@ class TestView(TestCase):
                     D.propstat(
                         D.prop(
                             D.getcontentlength("0"),
-                            D.creationdate("1983-12-23T23:00:00Z"),
-                            D.getlastmodified("Wed, 24 Dec 2014 06:00:00 GMT"),
+                            D.creationdate("1983-12-24T06:00:00Z"),
+                            D.getlastmodified("Wed, 24 Dec 2014 06:00:00 +0000"),
                             D.resourcetype(D.collection()),
                             D.displayname("collection"),
                         ),
@@ -199,8 +199,8 @@ class TestView(TestCase):
                     D.propstat(
                         D.prop(
                             D.getcontentlength("42"),
-                            D.creationdate("1983-12-23T23:00:00Z"),
-                            D.getlastmodified("Wed, 24 Dec 2014 06:00:00 GMT"),
+                            D.creationdate("1983-12-24T06:00:00Z"),
+                            D.getlastmodified("Wed, 24 Dec 2014 06:00:00 +0000"),
                             D.resourcetype(),
                             D.displayname("sub_object"),
                         ),
@@ -325,7 +325,7 @@ class TestView(TestCase):
         resp = v.get(None, path, acl_class=FullAcl)
         self.assertEqual(resp['Etag'], "0" * 40)
         self.assertEqual(resp['Content-Type'], "text/plain")
-        self.assertEqual(resp['Last-Modified'], "Wed, 24 Dec 2014 06:00:00 GMT")
+        self.assertEqual(resp['Last-Modified'], "Wed, 24 Dec 2014 06:00:00 +0000")
         self.assertEqual(resp.content, "C" * 42)
 
     @patch('djangodav.views.render_to_response', Mock(return_value=HttpResponse('listing')))
@@ -335,7 +335,7 @@ class TestView(TestCase):
         v.__dict__['resource'] = MockObject(path)
         resp = v.head(None, path)
         self.assertEqual("text/plain", resp['Content-Type'])
-        self.assertEqual("Wed, 24 Dec 2014 06:00:00 GMT", resp['Last-Modified'])
+        self.assertEqual("Wed, 24 Dec 2014 06:00:00 +0000", resp['Last-Modified'])
         self.assertEqual("", resp.content)
         self.assertEqual("0", resp['Content-Length'])
 
@@ -346,7 +346,7 @@ class TestView(TestCase):
         v.__dict__['resource'] = MockCollection(path)
         resp = v.get(None, path)
         self.assertEqual("listing", resp.content)
-        self.assertEqual("Wed, 24 Dec 2014 06:00:00 GMT", resp['Last-Modified'])
+        self.assertEqual("Wed, 24 Dec 2014 06:00:00 +0000", resp['Last-Modified'])
 
     def test_head_collection(self):
         path = '/collection/'
@@ -354,7 +354,7 @@ class TestView(TestCase):
         v.__dict__['resource'] = MockCollection(path)
         resp = v.head(None, path)
         self.assertEqual("", resp.content)
-        self.assertEqual("Wed, 24 Dec 2014 06:00:00 GMT", resp['Last-Modified'])
+        self.assertEqual("Wed, 24 Dec 2014 06:00:00 +0000", resp['Last-Modified'])
         self.assertEqual("0", resp['Content-Length'])
 
     def test_put_new(self):
@@ -445,6 +445,7 @@ class TestView(TestCase):
         request.META['HTTP_DESTINATION'] = "http://testserver%s" % dst.get_path()
         request.META['SERVER_NAME'] = 'testserver'
         request.META['SERVER_PORT'] = '80'
+        request.META['HTTP_DEPTH'] = 'infinity'
         v = DavView(base_url='http://testserver', request=request, path=src.get_path(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
         v.resource_class = Mock(return_value=dst)
         v.__dict__['resource'] = src
@@ -461,6 +462,7 @@ class TestView(TestCase):
         request.META['HTTP_DESTINATION'] = "http://testserver%s" % dst.get_escaped_path()
         request.META['SERVER_NAME'] = 'testserver'
         request.META['SERVER_PORT'] = '80'
+        request.META['HTTP_DEPTH'] = 'infinity'
         v = DavView(base_url='http://testserver', request=request, path=src.get_path(), acl_class=FullAcl, resource_class=Mock(), lock_class=DummyLock)
         v.resource_class = Mock(return_value=dst)
         v.__dict__['resource'] = src
