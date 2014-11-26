@@ -186,21 +186,18 @@ class DavView(View):
         if path.endswith("/") and self.resource.is_object:
             return HttpResponseRedirect(request.build_absolute_uri().rstrip("/"))
         response = HttpResponse()
-        response['Content-Length'] = 0
-        acl = self.get_access(self.resource)
+        if head:
+            response['Content-Length'] = 0
+        if not self.has_access(self.resource, 'read'):
+            return self.no_access()
         if self.resource.is_object:
-            if not acl.read:
-                return self.no_access()
+            response['Content-Type'] = self.resource.content_type
+            response['ETag'] = self.resource.getetag
             if not head:
                 response['Content-Length'] = self.resource.getcontentlength
                 response.content = self.resource.read()
-            response['Content-Type'] = self.resource.content_type
-            response['ETag'] = self.resource.getetag
-        else:
-            if not acl.read:
-                return self.no_access()
-            if not head:
-                response = render_to_response(self.template_name, {'res': self.resource, 'base_url': self.base_url})
+        elif not head:
+            response = render_to_response(self.template_name, dict(resource=self.resource, base_url=self.base_url))
         response['Last-Modified'] = self.resource.getlastmodified
         return response
 

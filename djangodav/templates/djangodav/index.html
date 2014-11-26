@@ -24,7 +24,7 @@
 <head></head>
 
 <body>
-<h1>Index of {{ res.get_displaypath }}</h1>
+<h1>Index of {{ resource.get_displaypath }}</h1>
 <table>
 <tr>
     <th>Name</th>
@@ -34,9 +34,9 @@
 </tr>
 <tr><th colspan="5"><hr></th></tr>
 <tr>
-    <td><a href="{{ base_url }}{% if not res.get_escaped_path %}/{% endif %}{{ res.get_parent.get_escaped_path }}">Parent Directory</a></td>
+    <td><a href="{{ base_url }}{% if not resource.get_escaped_path %}/{% endif %}{{ resource.get_parent.get_escaped_path }}">Parent Directory</a></td>
 </tr>
-{% for child in res.get_children %}
+{% for child in resource.get_children %}
 <tr>
     <td><a href="{{ base_url }}{{ child.get_escaped_path }}">{{ child.displayname }}</a></td>
     <td align="right">{{ child.get_created|date:"d-M-Y H:i" }}</td>
