@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from lxml.etree import ElementTree
-from django.http import HttpResponse, HttpRequest
+from django.http import HttpResponse, HttpRequest, Http404
 from djangodav.acls import FullAcl
 from djangodav.locks import DummyLock
 from djangodav.responses import ResponseException
@@ -91,8 +91,7 @@ class TestView(TestCase):
         r = DavView(path=path, acl_class=FullAcl)
         r.__dict__['resource'] = MissingMockCollection(path)
         request = Mock(META={'SERVERNANE': 'testserver'}, build_absolute_uri=Mock(return_value=path))
-        resp = r.get(request, path, 'xbody')
-        self.assertEqual(resp.status_code, 404)
+        self.assertRaises(Http404, r.get, request, path, 'xbody')
 
     def test_propfind_listing(self):
         self.top_collection.get_descendants.return_value += [self.top_collection]
@@ -433,9 +432,8 @@ class TestView(TestCase):
         v.__dict__['resource'] = target
         request = HttpRequest()
         target.delete = Mock()
-        resp = v.delete(request, target.get_path())
+        self.assertRaises(Http404, v.delete, request, target.get_path())
         self.assertFalse(target.delete.called)
-        self.assertEqual(404, resp.status_code)
 
     def test_copy_new(self):
         src = self.sub_object

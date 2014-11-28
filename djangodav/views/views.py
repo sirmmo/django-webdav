@@ -7,8 +7,8 @@ from sys import version_info as python_version
 from django.utils.timezone import now
 from lxml import etree
 
-from django.http import HttpResponseForbidden, HttpResponseNotFound, HttpResponseNotAllowed, HttpResponseBadRequest, \
-    HttpResponseNotModified, HttpResponseRedirect
+from django.http import HttpResponseForbidden, HttpResponseNotAllowed, HttpResponseBadRequest, \
+    HttpResponseNotModified, HttpResponseRedirect, Http404
 from django.utils.decorators import method_decorator
 from django.utils.functional import cached_property
 from django.utils.http import parse_etags
@@ -180,7 +180,7 @@ class DavView(View):
 
     def get(self, request, path, head=False, *args, **kwargs):
         if not self.resource.exists:
-            return HttpResponseNotFound()
+            raise Http404("Resource doesn't exists")
         if not path.endswith("/") and self.resource.is_collection:
             return HttpResponseRedirect(request.build_absolute_uri() + "/")
         if path.endswith("/") and self.resource.is_object:
@@ -207,7 +207,7 @@ class DavView(View):
     def put(self, request, path, *args, **kwargs):
         parent = self.resource.get_parent()
         if not parent.exists:
-            return HttpResponseNotFound()
+            raise Http404("Resource doesn't exists")
         if self.resource.is_collection:
             return self.no_access()
         if not self.resource.exists and not self.has_access(parent, 'write'):
@@ -224,7 +224,7 @@ class DavView(View):
 
     def delete(self, request, path, *args, **kwargs):
         if not self.resource.exists:
-            return HttpResponseNotFound()
+            raise Http404("Resource doesn't exists")
         if not self.has_access(self.resource, 'delete'):
             return self.no_access()
         self.lock_class(self.resource).del_locks()
@@ -249,7 +249,7 @@ class DavView(View):
 
     def relocate(self, request, path, method, *args, **kwargs):
         if not self.resource.exists:
-            return HttpResponseNotFound()
+            raise Http404("Resource doesn't exists")
         if not self.has_access(self.resource, 'read'):
             return self.no_access()
         dst = urlparse.unquote(request.META.get('HTTP_DESTINATION', '')).decode(self.xml_encoding)
@@ -368,7 +368,7 @@ class DavView(View):
             return self.no_access()
 
         if not self.resource.exists:
-            return HttpResponseNotFound()
+            raise Http404("Resource doesn't exists")
 
         if not self.get_access(self.resource):
             return self.no_access()
@@ -415,7 +415,7 @@ class DavView(View):
 
     def proppatch(self, request, path, xbody, *args, **kwargs):
         if not self.resource.exists:
-            return HttpResponseNotFound()
+            raise Http404("Resource doesn't exists")
         if not self.has_access(self.resource, 'write'):
             return self.no_access()
         depth = self.get_depth(default="0")
