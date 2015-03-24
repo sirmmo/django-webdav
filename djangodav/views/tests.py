@@ -273,7 +273,7 @@ class TestView(TestCase):
         v = DavView()
         parent = MockCollection('/path/to/obj')
         v.__dict__['resource'] = MissingMockCollection('/path/', get_parent=Mock(return_value=parent))
-        self.assertListEqual(v._allowed_methods(), ['HEAD', 'OPTIONS', 'PROPFIND', 'PUT', 'MKCOL'])
+        self.assertListEqual(v._allowed_methods(), ['HEAD', 'OPTIONS', 'PROPFIND', 'GET', 'PUT', 'MKCOL'])
 
     def test_allowed_missing_parent(self):
         v = DavView()
