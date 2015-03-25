@@ -37,7 +37,8 @@ DEFAULT_SETTINGS = dict(
             ENGINE = 'django.db.backends.sqlite3'
         )
     ),
-    ROOT_URLCONF = 'djangodav.tests.urls'
+    ROOT_URLCONF = 'djangodav.tests.urls',
+    MIDDLEWARE_CLASSES = ()
 )
 
 
