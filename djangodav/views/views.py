@@ -95,7 +95,7 @@ class DavView(View):
         return response
 
     def _allowed_methods(self):
-        allowed = ['HEAD', 'OPTIONS', 'PROPFIND']
+        allowed = ['HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK']
         if not self.resource.exists:
             parent = self.resource.get_parent()
             if not (parent.is_collection and parent.exists):
