@@ -262,12 +262,12 @@ class TestView(TestCase):
     def test_allowed_object(self):
         v = DavView()
         v.__dict__['resource'] = self.sub_object
-        self.assertListEqual(v._allowed_methods(), ['HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK', 'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK', 'PUT'])
+        self.assertListEqual(v._allowed_methods(), ['HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK', 'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE', 'PUT'])
 
     def test_allowed_collection(self):
         v = DavView()
         v.__dict__['resource'] = self.top_collection
-        self.assertListEqual(v._allowed_methods(), ['HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK', 'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE', 'LOCK', 'UNLOCK'])
+        self.assertListEqual(v._allowed_methods(), ['HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK', 'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE'])
 
     def test_allowed_missing_collection(self):
         v = DavView()
