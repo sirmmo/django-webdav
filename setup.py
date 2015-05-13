@@ -24,12 +24,9 @@
 from setuptools import setup, find_packages
 
 
-version = __import__('djangodav').get_version()
-
-
 setup(
     name='DjangoDav',
-    version=version,
+    version=__import__('djangodav').__version__,
     description=('A WebDAV server for Django.'),
     long_description = open('README.rst').read(),
     author='Alexander Klimenko',

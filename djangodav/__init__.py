@@ -18,9 +18,6 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
-# get_version
-from functools import partial
-from django import get_version as base_get_version
 
-VERSION = (0, 0, 1, 'beta', 13)
-get_version = partial(base_get_version, VERSION)
+VERSION = (0, 0, 1, 'beta', 14)
+__version__ = "0.0.1b14"
