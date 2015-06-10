@@ -36,7 +36,7 @@ class TastypieAuthViewMixIn(object):
             if isinstance(auth_result, HttpResponse):
                 return auth_result
 
-            if not auth_result is True:
+            if auth_result is not True:
                 return HttpResponseUnAuthorized()
 
         return super(TastypieAuthViewMixIn, self).dispatch(request, *args, **kwargs)

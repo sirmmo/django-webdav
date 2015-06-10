@@ -347,7 +347,7 @@ class DavView(View):
             D.depth(unicode(depth)),
             D.timeout("Second-%s" % timeout),
             D.locktoken(D.href('opaquelocktoken:%s' % token))]
-            + ([owner_obj] if not owner_obj is None else [])
+            + ([owner_obj] if owner_obj is not None else [])
         ))
 
         return self.build_xml_response(body)

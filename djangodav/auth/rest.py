@@ -51,7 +51,7 @@ class RestAuthViewMixIn(object):
                     else:
                         break    # we got auth, so stop trying
 
-            if not user_auth_tuple is None:
+            if user_auth_tuple is not None:
                 user, auth = user_auth_tuple
             else:
                 resp = HttpResponseUnAuthorized("Not Authorised")
