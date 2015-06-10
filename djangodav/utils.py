@@ -119,13 +119,13 @@ def parse_time(timestring):
     for fmt in (FORMAT_RFC_822, FORMAT_RFC_850, FORMAT_ASC):
         try:
             value = time.strptime(timestring, fmt)
-        except:
+        except ValueError:
             pass
     if value is None:
         try:
             # Sun Nov  6 08:49:37 1994 +0100      ; ANSI C's asctime() format with timezone
             value = parsedate_tz(timestring)
-        except:
+        except ValueError:
             pass
     if value is None:
         return
