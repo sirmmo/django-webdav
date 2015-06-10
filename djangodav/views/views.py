@@ -434,7 +434,7 @@ class DavView(View):
         return self.build_xml_response(body, HttpResponseMultiStatus)
 
     def build_xml_response(self, tree=None, response_class=HttpResponse, **kwargs):
-        if not tree is None:
+        if tree is not None:
             content = etree.tostring(
                 tree,
                 xml_declaration=True,
