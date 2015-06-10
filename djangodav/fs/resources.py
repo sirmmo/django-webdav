@@ -90,10 +90,10 @@ class BaseFSDavResource(BaseDavResource):
             yield self.clone(url_join(*(self.path + [child])))
 
     def write(self, content):
-        raise NotImplemented
+        raise NotImplementedError
 
     def read(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def delete(self):
         """Delete the resource, recursive is implied."""

@@ -47,7 +47,7 @@ class BaseDBDavResource(BaseDavResource):
 
     @cached_property
     def obj(self):
-        raise NotImplemented()
+        raise NotImplementedError
 
     @property
     def getcontentlength(self):
@@ -96,10 +96,10 @@ class BaseDBDavResource(BaseDavResource):
                 )
 
     def read(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def write(self, content):
-        raise NotImplemented
+        raise NotImplementedError
 
     def delete(self):
         if not self.obj:
