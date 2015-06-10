@@ -117,10 +117,8 @@ class BaseFSDavResource(BaseDavResource):
 
 class DummyReadFSDavResource(BaseFSDavResource):
     def read(self):
-        f = open(self.get_abs_path(), 'r')
-        resp = f.read()
-        f.close()
-        return resp
+        with open(self.get_abs_path(), 'r') as f:
+            return f.read()
 
 
 class DummyWriteFSDavResource(BaseFSDavResource):
