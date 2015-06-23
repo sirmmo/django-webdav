@@ -167,7 +167,7 @@ class NameLookupDBDavMixIn(object):
         if related:
             qs = qs.select_related(*related)
         try:
-            return qs.filter(reduce(and_, args)).last()
+            return qs.filter(reduce(and_, args))[0]
         except IndexError:
             raise qs.model.DoesNotExist()
 
