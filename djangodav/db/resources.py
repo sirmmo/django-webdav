@@ -159,13 +159,18 @@ class NameLookupDBDavMixIn(object):
         for part in reversed(path):
             args.append(Q(**{"__".join(([self.collection_attribute] * i) + [self.name_attribute]): part}))
             i += 1
-        args.append(Q(**{"__".join([self.collection_attribute] * len(path)): None}))
-        related = ["__".join([self.collection_attribute] * i) for i in range(1, len(path))]
-        related += getattr(self, "%s_select_related" % model_attr)
-
         qs = getattr(self, "%s_model" % model_attr).objects.filter(**self.get_model_kwargs())
-        if related:
-            qs = qs.select_related(*related)
+
+        select_related = ["__".join([self.collection_attribute] * i) for i in range(1, len(path))]
+        select_related += getattr(self, "%s_select_related" % model_attr)
+        if select_related:
+            qs = qs.select_related(*select_related)
+
+        prefetch_related = getattr(self, "%s_prefetch_related" % model_attr)
+        if prefetch_related:
+            qs = qs.prefetch_related(*prefetch_related)
+
+        args.append(Q(**{"__".join([self.collection_attribute] * len(path)): None}))
         try:
             return qs.filter(reduce(and_, args))[0]
         except IndexError:
