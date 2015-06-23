@@ -40,6 +40,9 @@ class BaseDBDavResource(BaseDavResource):
     collection_select_related = tuple()
     object_select_related = tuple()
 
+    collection_prefetch_related = tuple()
+    object_prefetch_related = tuple()
+
     def __init__(self, path, **kwargs):
         if 'obj' in kwargs:  # Accepting ready object to reduce db requests
             self.__dict__['obj'] = kwargs.pop('obj')
@@ -84,12 +87,17 @@ class BaseDBDavResource(BaseDavResource):
             return
 
         models = [
-            [self.collection_model, self.collection_select_related],
-            [self.object_model, self.object_select_related]
+            [self.collection_model, self.collection_select_related, self.collection_prefetch_related],
+            [self.object_model, self.object_select_related, self.object_prefetch_related]
         ]
-        for model, related in models:
+        for model, select_related, prefetch_related in models:
+            qs = model.objects
+            if select_related:
+                qs = qs.select_related(select_related)
+            if prefetch_related:
+                qs = qs.prefetch_related(prefetch_related)
             kwargs = self.get_model_kwargs(**{self.collection_attribute: self.obj})
-            for child in model.objects.select_related(self.collection_attribute, *related).filter(**kwargs):
+            for child in qs.filter(**kwargs):
                 yield self.clone(
                     url_join(*(self.path + [child.name])),
                     obj=child    # Sending ready object to reduce db requests
