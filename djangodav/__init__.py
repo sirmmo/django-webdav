@@ -20,4 +20,4 @@
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 
 VERSION = (0, 0, 1, 'beta', 17)
-__version__ = "0.0.1b16"
+__version__ = "0.0.1b17"
