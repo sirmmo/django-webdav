@@ -93,9 +93,9 @@ class BaseDBDavResource(BaseDavResource):
         for model, select_related, prefetch_related in models:
             qs = model.objects
             if select_related:
-                qs = qs.select_related(select_related)
+                qs = qs.select_related(*select_related)
             if prefetch_related:
-                qs = qs.prefetch_related(prefetch_related)
+                qs = qs.prefetch_related(*prefetch_related)
             kwargs = self.get_model_kwargs(**{self.collection_attribute: self.obj})
             for child in qs.filter(**kwargs):
                 yield self.clone(
