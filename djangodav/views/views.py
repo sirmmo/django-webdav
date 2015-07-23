@@ -55,7 +55,7 @@ class DavView(View):
         meta = request.META.get
         self.xbody = kwargs['xbody'] = None
         if (request.method.lower() != 'put'
-            and meta('CONTENT_TYPE', '').startswith('text/xml')
+            and "/xml" in meta('CONTENT_TYPE', '')
             and meta('CONTENT_LENGTH', 0) != ''
             and int(meta('CONTENT_LENGTH', 0)) > 0):
             self.xbody = kwargs['xbody'] = etree.XPathDocumentEvaluator(
