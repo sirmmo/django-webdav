@@ -8,7 +8,7 @@ from django.utils.timezone import now
 from lxml import etree
 
 from django.http import HttpResponseForbidden, HttpResponseNotAllowed, HttpResponseBadRequest, \
-    HttpResponseNotModified, HttpResponseRedirect, Http404
+    HttpResponseNotModified, HttpResponseRedirect, Http404, HttpResponse
 from django.utils.decorators import method_decorator
 from django.utils.functional import cached_property
 from django.utils.http import parse_etags
@@ -24,7 +24,6 @@ from djangodav import VERSION as djangodav_version
 from django import VERSION as django_version, get_version
 
 PATTERN_IF_DELIMITER = re.compile(r'(<([^>]+)>)|(\(([^\)]+)\))')
-
 
 class DavView(View):
     resource_class = None
@@ -206,7 +205,7 @@ class DavView(View):
     def put(self, request, path, *args, **kwargs):
         parent = self.resource.get_parent()
         if not parent.exists:
-            raise Http404("Resource doesn't exists")
+            return HttpResponseConflict("Resource doesn't exists")
         if self.resource.is_collection:
             return self.no_access()
         if not self.resource.exists and not self.has_access(parent, 'write'):
