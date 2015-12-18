@@ -98,8 +98,8 @@ class DavView(View):
         allowed = ['HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK']
         if not self.resource.exists:
             parent = self.resource.get_parent()
-            if not (parent.is_collection and parent.exists):
-                return []
+            #if not (parent.is_collection and parent.exists):
+            #    return allowed + ['GET']
             return allowed + ['GET', 'PUT', 'MKCOL']
         allowed += ['GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE']
         if self.resource.is_object:
