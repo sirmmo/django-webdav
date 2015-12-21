@@ -96,11 +96,8 @@ class DavView(View):
     def _allowed_methods(self):
         allowed = [
             'HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK',
-            'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE'
+            'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE', 'PUT',
         ]
-
-        if self.resource.is_object:
-            allowed += ['PUT']
 
         return allowed
 
@@ -207,7 +204,7 @@ class DavView(View):
         if not parent.exists:
             return HttpResponseConflict("Resource doesn't exists")
         if self.resource.is_collection:
-            return self.no_access()
+            return HttpResponseNotAllowed(list(set(self._allowed_methods() - set(['MKCOL', 'PUT']))))
         if not self.resource.exists and not self.has_access(parent, 'write'):
             return self.no_access()
         if self.resource.exists and not self.has_access(self.resource, 'write'):
@@ -233,7 +230,7 @@ class DavView(View):
 
     def mkcol(self, request, path, *args, **kwargs):
         if self.resource.exists:
-            return HttpResponseNotAllowed(self._allowed_methods())
+            return HttpResponseNotAllowed(list(set(self._allowed_methods() - set(['MKCOL', 'PUT']))))
         if not self.resource.get_parent().exists:
             return HttpResponseConflict()
         length = request.META.get('CONTENT_LENGTH', 0)
