@@ -8,7 +8,7 @@ from django.utils.timezone import now
 from lxml import etree
 
 from django.http import HttpResponseForbidden, HttpResponseNotAllowed, HttpResponseBadRequest, \
-    HttpResponseNotModified, HttpResponseRedirect, Http404, HttpResponse
+    HttpResponseNotModified, HttpResponseRedirect, Http404
 from django.utils.decorators import method_decorator
 from django.utils.functional import cached_property
 from django.utils.http import parse_etags
