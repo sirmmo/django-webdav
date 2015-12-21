@@ -96,7 +96,7 @@ class DavView(View):
     def _allowed_methods(self):
         allowed = [
             'HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK',
-            'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE', 'PUT',
+            'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE', 'PUT', 'MKCOL',
         ]
 
         return allowed
