@@ -22,7 +22,12 @@ from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from djangodav.responses import HttpResponseUnAuthorized
-from rest_framework.exceptions import APIException
+
+try:
+    import rest_framework
+    from rest_framework.exceptions import APIException
+except ImportError:
+    rest_framework = None
 
 
 class RequestWrapper(object):
@@ -38,6 +43,7 @@ class RestAuthViewMixIn(object):
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
+        assert rest_framework is not None, "django rest framework is not installed."
         if request.method.lower() != 'options':
             user_auth_tuple = None
             for auth in self.authentications:
