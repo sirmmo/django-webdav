@@ -3,13 +3,22 @@ from base64 import b64encode
 
 from django.test import TestCase
 from django.test.client import RequestFactory
+try:
+    from django.utils.unittest import skipUnless
+except ImportError:
+    from unittest import skipUnless
 
 from djangodav.views import DavView
 from djangodav.fs.resources import DummyReadFSDavResource
 from djangodav.auth.rest import RestAuthViewMixIn
 
-from rest_framework.authentication import SessionAuthentication as RestSessionAuthentication, \
+try:
+    import rest_framework
+    from rest_framework.authentication import SessionAuthentication as RestSessionAuthentication, \
                                           BasicAuthentication as RestBasicAuthentication
+except ImportError:
+    rest_framework = None
+
 from djangodav.responses import HttpResponseUnAuthorized
 from django.contrib.auth import get_user_model
 from djangodav.locks import DummyLock
@@ -35,16 +44,20 @@ class RestAuthTest(TestCase):
         self.user.set_password('test')
         self.user.save()
     
+    @skipUnless(rest_framework, "required Django Rest Framework")
     def assertIsAuthorized(self, response):
         self.assertIsInstance(response, HttpResponse)
         self.assertNotIsInstance(response, HttpResponseUnAuthorized)
         
+    @skipUnless(rest_framework, "required Django Rest Framework")
     def assertIsNotAuthorized(self, response):
         self.assertIsInstance(response, HttpResponseUnAuthorized)
       
+    @skipUnless(rest_framework, "required Django Rest Framework")
     def assertHasAuthenticateHeader(self, response):
         self.assertEqual(response['WWW-Authenticate'], 'Basic realm="api"')
       
+    @skipUnless(rest_framework, "required Django Rest Framework")
     def test_auth_session(self):
         """ test whether we can authenticate through Django session """        
         
@@ -66,6 +79,7 @@ class RestAuthTest(TestCase):
         response = v(request, '/')
         self.assertIsAuthorized(response)
     
+    @skipUnless(rest_framework, "required Django Rest Framework")
     def test_auth_basic(self):
         """ test whether we can authenticate through Basic auth """
 
@@ -90,6 +104,7 @@ class RestAuthTest(TestCase):
         response = v(request, '/')
         self.assertIsAuthorized(response)
     
+    @skipUnless(rest_framework, "required Django Rest Framework")
     def test_auth_multiple(self):
         """ test whether we can authenticate through either Session or Basic auth """
         

@@ -262,24 +262,24 @@ class TestView(TestCase):
     def test_allowed_object(self):
         v = DavView()
         v.__dict__['resource'] = self.sub_object
-        self.assertListEqual(v._allowed_methods(), ['HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK', 'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE', 'PUT'])
+        self.assertListEqual(v._allowed_methods(), ['HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK', 'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE', 'PUT', 'MKCOL'])
 
     def test_allowed_collection(self):
         v = DavView()
         v.__dict__['resource'] = self.top_collection
-        self.assertListEqual(v._allowed_methods(), ['HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK', 'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE'])
+        self.assertListEqual(v._allowed_methods(), ['HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK', 'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE', 'PUT', 'MKCOL'])
 
     def test_allowed_missing_collection(self):
         v = DavView()
         parent = MockCollection('/path/to/obj')
         v.__dict__['resource'] = MissingMockCollection('/path/', get_parent=Mock(return_value=parent))
-        self.assertListEqual(v._allowed_methods(), ['HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK', 'GET', 'PUT', 'MKCOL'])
+        self.assertListEqual(v._allowed_methods(), ['HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK', 'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE', 'PUT', 'MKCOL'])
 
     def test_allowed_missing_parent(self):
         v = DavView()
         parent = MissingMockCollection('/path/to/obj')
         v.__dict__['resource'] = MissingMockCollection('/path/', get_parent=Mock(return_value=parent))
-        self.assertEqual(v._allowed_methods(), [])
+        self.assertListEqual(v._allowed_methods(), ['HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK', 'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE', 'PUT', 'MKCOL'])
 
     def test_options_root(self):
         path = '/'
@@ -384,7 +384,7 @@ class TestView(TestCase):
         request = HttpRequest()
         resp = v.put(request, path)
         self.assertFalse(self.sub_collection.write.called)
-        self.assertEqual(403, resp.status_code)
+        self.assertEqual(405, resp.status_code)
 
     def test_mkcol_new(self):
         path = '/collection/missing_sub_collection'

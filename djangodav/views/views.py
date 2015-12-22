@@ -25,7 +25,6 @@ from django import VERSION as django_version, get_version
 
 PATTERN_IF_DELIMITER = re.compile(r'(<([^>]+)>)|(\(([^\)]+)\))')
 
-
 class DavView(View):
     resource_class = None
     lock_class = None
@@ -95,15 +94,11 @@ class DavView(View):
         return response
 
     def _allowed_methods(self):
-        allowed = ['HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK']
-        if not self.resource.exists:
-            parent = self.resource.get_parent()
-            if not (parent.is_collection and parent.exists):
-                return []
-            return allowed + ['GET', 'PUT', 'MKCOL']
-        allowed += ['GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE']
-        if self.resource.is_object:
-            allowed += ['PUT']
+        allowed = [
+            'HEAD', 'OPTIONS', 'PROPFIND', 'LOCK', 'UNLOCK',
+            'GET', 'DELETE', 'PROPPATCH', 'COPY', 'MOVE', 'PUT', 'MKCOL',
+        ]
+
         return allowed
 
     def get_access(self, resource):
@@ -207,9 +202,9 @@ class DavView(View):
     def put(self, request, path, *args, **kwargs):
         parent = self.resource.get_parent()
         if not parent.exists:
-            raise Http404("Resource doesn't exists")
+            return HttpResponseConflict("Resource doesn't exists")
         if self.resource.is_collection:
-            return self.no_access()
+            return HttpResponseNotAllowed(list(set(self._allowed_methods()) - set(['MKCOL', 'PUT'])))
         if not self.resource.exists and not self.has_access(parent, 'write'):
             return self.no_access()
         if self.resource.exists and not self.has_access(self.resource, 'write'):
@@ -235,7 +230,7 @@ class DavView(View):
 
     def mkcol(self, request, path, *args, **kwargs):
         if self.resource.exists:
-            return HttpResponseNotAllowed(self._allowed_methods())
+            return HttpResponseNotAllowed(list(set(self._allowed_methods()) - set(['MKCOL', 'PUT'])))
         if not self.resource.get_parent().exists:
             return HttpResponseConflict()
         length = request.META.get('CONTENT_LENGTH', 0)
