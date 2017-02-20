@@ -58,7 +58,7 @@ def runtests(*test_args):
     except ImportError:
         from django.test.simple import DjangoTestSuiteRunner
         runner_class = DjangoTestSuiteRunner
-    failures = runner_class(varbosity=1, interactive=True, failfast=False).run_tests(test_args)
+    failures = runner_class(verbosity=1, interactive=True, failfast=False).run_tests(test_args)
     sys.exit(failures)
 
 
