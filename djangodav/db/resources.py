@@ -79,7 +79,7 @@ class BaseDBDavResource(BaseDavResource):
         return self.is_root or bool(self.obj)
 
     def get_model_lookup_kwargs(self, **kwargs):
-        return kwargs.update(self.get_model_kwargs(kwargs))
+        return self.get_model_kwargs(**kwargs)
 
     def get_model_kwargs(self, **kwargs):
         return kwargs
