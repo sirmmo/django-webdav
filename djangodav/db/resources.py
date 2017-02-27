@@ -78,8 +78,11 @@ class BaseDBDavResource(BaseDavResource):
     def exists(self):
         return self.is_root or bool(self.obj)
 
+    def get_model_lookup_kwargs(self, **kwargs):
+        return kwargs.update(self.get_model_kwargs(kwargs))
+
     def get_model_kwargs(self, **kwargs):
-        return kwargs or {}
+        return kwargs
 
     def get_children(self):
         """Return an iterator of all direct children of this resource."""
@@ -96,7 +99,7 @@ class BaseDBDavResource(BaseDavResource):
                 qs = qs.select_related(*select_related)
             if prefetch_related:
                 qs = qs.prefetch_related(*prefetch_related)
-            kwargs = self.get_model_kwargs(**{self.collection_attribute: self.obj})
+            kwargs = self.get_model_lookup_kwargs(**{self.collection_attribute: self.obj})
             for child in qs.filter(**kwargs):
                 yield self.clone(
                     url_join(*(self.path + [child.name])),
@@ -159,7 +162,7 @@ class NameLookupDBDavMixIn(object):
         for part in reversed(path):
             args.append(Q(**{"__".join(([self.collection_attribute] * i) + [self.name_attribute]): part}))
             i += 1
-        qs = getattr(self, "%s_model" % model_attr).objects.filter(**self.get_model_kwargs())
+        qs = getattr(self, "%s_model" % model_attr).objects.filter(**self.get_model_lookup_kwargs())
 
         select_related = ["__".join([self.collection_attribute] * i) for i in range(1, len(path))]
         select_related += getattr(self, "%s_select_related" % model_attr)
