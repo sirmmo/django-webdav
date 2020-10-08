@@ -23,7 +23,7 @@ from djangodav.locks import DummyLock
 
 from djangodav.views import DavView
 
-from django.conf.urls import patterns
+from django.conf.urls import url
 
 from samples.fs.resources import TempDirWebDavResource
 from samples.db.resources import MyDBDavResource
@@ -31,14 +31,14 @@ from samples.auth.views.rest import RestAuthDavView
 from samples.auth.views.tasty import TastyAuthDavView
 
 
-urlpatterns = patterns('',
+urlpatterns = [
     # Mirroring tmp folder
-    (r'^fs(?P<path>.*)$', DavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock, acl_class=FullAcl)),
+    url(r'^fs(?P<path>.*)$', DavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock, acl_class=FullAcl)),
     # Db file keeper
-    (r'^db(?P<path>.*)$', DavView.as_view(resource_class=MyDBDavResource, lock_class=DummyLock, acl_class=FullAcl)),
+    url(r'^db(?P<path>.*)$', DavView.as_view(resource_class=MyDBDavResource, lock_class=DummyLock, acl_class=FullAcl)),
 
     # REST framework auth
-    (r'^auth/rest(?P<path>.*)$', RestAuthDavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock, acl_class=FullAcl)),
+    url(r'^auth/rest(?P<path>.*)$', RestAuthDavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock, acl_class=FullAcl)),
     # Tastypie auth
-    (r'^auth/tasty(?P<path>.*)$', TastyAuthDavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock, acl_class=FullAcl)),
-)
+    url(r'^auth/tasty(?P<path>.*)$', TastyAuthDavView.as_view(resource_class=TempDirWebDavResource, lock_class=DummyLock, acl_class=FullAcl)),
+]

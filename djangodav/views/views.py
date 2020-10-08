@@ -1,18 +1,20 @@
 import urllib, re
+import sys
 try:
     import urlparse
 except ImportError:
     from urllib import parse as urlparse
 from sys import version_info as python_version
-from django.utils.timezone import now
 from lxml import etree
 
+from django.utils.encoding import force_text
+from django.utils.timezone import now
 from django.http import HttpResponseForbidden, HttpResponseNotAllowed, HttpResponseBadRequest, \
     HttpResponseNotModified, HttpResponseRedirect, Http404
 from django.utils.decorators import method_decorator
 from django.utils.functional import cached_property
 from django.utils.http import parse_etags
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
@@ -192,7 +194,7 @@ class DavView(View):
                 response['Content-Length'] = self.resource.getcontentlength
                 response.content = self.resource.read()
         elif not head:
-            response = render_to_response(self.template_name, dict(resource=self.resource, base_url=self.base_url))
+            response = render(request, self.template_name, dict(resource=self.resource, base_url=self.base_url))
         response['Last-Modified'] = self.resource.getlastmodified
         return response
 
@@ -247,7 +249,13 @@ class DavView(View):
             raise Http404("Resource doesn't exists")
         if not self.has_access(self.resource, 'read'):
             return self.no_access()
-        dst = urlparse.unquote(request.META.get('HTTP_DESTINATION', '')).decode(self.xml_encoding)
+        # dst = urlparse.unquote(request.META.get('HTTP_DESTINATION', '')).decode(self.xml_encoding)
+        if sys.version_info < (3, 0, 0): #py2
+            # in Python 2, urlparse requires bytestrings
+            dst = urlparse.unquote(request.META.get('HTTP_DESTINATION', '')).decode(self.xml_encoding)
+        else:
+            # in Python 3, urlparse understands string
+            dst = urlparse.unquote(request.META.get('HTTP_DESTINATION', ''))
         if not dst:
             return HttpResponseBadRequest('Destination header missing.')
         dparts = urlparse.urlparse(dst)
@@ -339,7 +347,7 @@ class DavView(View):
         body = D.activelock(*([
             D.locktype(locktype_obj),
             D.lockscope(lockscope_obj),
-            D.depth(unicode(depth)),
+            D.depth(force_text(depth)),
             D.timeout("Second-%s" % timeout),
             D.locktoken(D.href('opaquelocktoken:%s' % token))]
             + ([owner_obj] if owner_obj is not None else [])

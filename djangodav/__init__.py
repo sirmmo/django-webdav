@@ -19,5 +19,5 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 
-VERSION = (0, 0, 1, 'beta', 23)
-__version__ = "0.0.1b23"
+VERSION = (0, 0, 1, 'beta', 24)
+__version__ = "0.0.1b24"

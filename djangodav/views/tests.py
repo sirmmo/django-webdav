@@ -18,6 +18,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
+import sys
 from lxml.etree import ElementTree
 from django.http import HttpResponse, HttpRequest, Http404
 from djangodav.acls import FullAcl
@@ -325,9 +326,12 @@ class TestView(TestCase):
         self.assertEqual(resp['Etag'], "0" * 40)
         self.assertEqual(resp['Content-Type'], "text/plain")
         self.assertEqual(resp['Last-Modified'], "Wed, 24 Dec 2014 06:00:00 +0000")
-        self.assertEqual(resp.content, "C" * 42)
+        if sys.version_info < (3, 0, 0): #py2
+            self.assertEqual(resp.content, "C" * 42)
+        else:
+            self.assertEqual(resp.content.decode('utf-8'), "C" * 42)
 
-    @patch('djangodav.views.render_to_response', Mock(return_value=HttpResponse('listing')))
+    @patch('djangodav.views.render', Mock(return_value=HttpResponse('listing')))
     def test_head_object(self):
         path = '/object.txt'
         v = DavView(path=path, base_url='/base', _allowed_methods=Mock(return_value=['ALL']), acl_class=FullAcl)
@@ -335,16 +339,22 @@ class TestView(TestCase):
         resp = v.head(None, path)
         self.assertEqual("text/plain", resp['Content-Type'])
         self.assertEqual("Wed, 24 Dec 2014 06:00:00 +0000", resp['Last-Modified'])
-        self.assertEqual("", resp.content)
+        if sys.version_info < (3, 0, 0): #py2
+            self.assertEqual("", resp.content)
+        else:
+            self.assertEqual("", resp.content.decode('utf-8'))
         self.assertEqual("0", resp['Content-Length'])
 
-    @patch('djangodav.views.views.render_to_response', Mock(return_value=HttpResponse('listing')))
+    @patch('djangodav.views.views.render', Mock(return_value=HttpResponse('listing')))
     def test_get_collection(self):
         path = '/collection/'
         v = DavView(path=path, acl_class=FullAcl, base_url='/base', _allowed_methods=Mock(return_value=['ALL']))
         v.__dict__['resource'] = MockCollection(path)
         resp = v.get(None, path)
-        self.assertEqual("listing", resp.content)
+        if sys.version_info < (3, 0, 0): #py2
+            self.assertEqual("listing", resp.content)
+        else:
+            self.assertEqual("listing", resp.content.decode('utf-8'))
         self.assertEqual("Wed, 24 Dec 2014 06:00:00 +0000", resp['Last-Modified'])
 
     def test_head_collection(self):
@@ -352,7 +362,10 @@ class TestView(TestCase):
         v = DavView(path=path, acl_class=FullAcl, base_url='/base', _allowed_methods=Mock(return_value=['ALL']))
         v.__dict__['resource'] = MockCollection(path)
         resp = v.head(None, path)
-        self.assertEqual("", resp.content)
+        if sys.version_info < (3, 0, 0): #py2
+            self.assertEqual("", resp.content)
+        else:
+            self.assertEqual("", resp.content.decode('utf-8'))
         self.assertEqual("Wed, 24 Dec 2014 06:00:00 +0000", resp['Last-Modified'])
         self.assertEqual("0", resp['Content-Length'])
 
