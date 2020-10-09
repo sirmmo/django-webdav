@@ -22,6 +22,8 @@
 
 import datetime, time, calendar
 from wsgiref.handlers import format_date_time
+
+from django.utils.encoding import force_text
 from django.utils.feedgenerator import rfc2822_date
 
 try:
@@ -61,7 +63,7 @@ def get_property_tag(res, name):
         return D(name)
     try:
         if hasattr(res, name):
-            return D(name, unicode(getattr(res, name)))
+            return D(name, force_text(getattr(res, name)))
     except AttributeError:
         return
 

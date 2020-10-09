@@ -20,6 +20,8 @@
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 from uuid import uuid4
 
+from django.utils.encoding import force_text
+
 from djangodav.base.locks import BaseLock
 
 
@@ -28,7 +30,7 @@ class DummyLock(BaseLock):
         pass
 
     def acquire(self, *args, **kwargs):
-        return unicode(uuid4())
+        return force_text(uuid4())
 
     def release(self, token):
         return True

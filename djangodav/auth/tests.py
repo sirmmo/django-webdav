@@ -1,3 +1,4 @@
+import sys
 from os.path import dirname
 from base64 import b64encode
 
@@ -100,7 +101,11 @@ class RestAuthTest(TestCase):
         self.assertIsNotAuthorized(response)
 
         # get with basic authentication goes through
-        request = RequestFactory().get('/', **{'HTTP_AUTHORIZATION': 'Basic %s' % b64encode('root:test')})
+        if sys.version_info < (3, 0, 0): #py2
+            b64encode_str = b64encode('root:test')
+        else:
+            b64encode_str = b64encode(b'root:test').decode('utf-8')
+        request = RequestFactory().get('/', **{'HTTP_AUTHORIZATION': 'Basic %s' % b64encode_str})
         response = v(request, '/')
         self.assertIsAuthorized(response)
     
@@ -125,6 +130,10 @@ class RestAuthTest(TestCase):
         self.assertIsAuthorized(response)    
     
         # get with basic authentication goes through
-        request = RequestFactory().get('/', **{'HTTP_AUTHORIZATION': 'Basic %s' % b64encode('root:test')})
+        if sys.version_info < (3, 0, 0): #py2
+            b64encode_str = b64encode('root:test')
+        else:
+            b64encode_str = b64encode(b'root:test').decode('utf-8')
+        request = RequestFactory().get('/', **{'HTTP_AUTHORIZATION': 'Basic %s' % b64encode_str})
         response = v(request, '/')
         self.assertIsAuthorized(response)

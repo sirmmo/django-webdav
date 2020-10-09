@@ -23,4 +23,9 @@
 *.pot
 *.pyc
 env
+env3
 .idea
+.vscode
+*.sqlite
+migrations
+__pycache__

@@ -21,6 +21,7 @@
 from hashlib import md5
 from mimetypes import guess_type
 
+from django.utils.encoding import force_bytes
 from django.utils.http import urlquote
 from djangodav.utils import rfc3339_date, rfc1123_date, safe_join
 
@@ -191,8 +192,8 @@ class MetaEtagMixIn(object):
         file system. The etag is used to detect changes to a resource between HTTP calls. So this
         needs to change if a resource is modified."""
         hashsum = md5()
-        hashsum.update(self.displayname)
-        hashsum.update(str(self.creationdate))
-        hashsum.update(str(self.getlastmodified))
-        hashsum.update(str(self.getcontentlength))
+        hashsum.update(force_bytes(self.displayname))
+        hashsum.update(force_bytes(self.creationdate))
+        hashsum.update(force_bytes(self.getlastmodified))
+        hashsum.update(force_bytes(self.getcontentlength))
         return hashsum.hexdigest()

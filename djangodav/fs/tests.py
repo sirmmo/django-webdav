@@ -58,8 +58,9 @@ class TestFSDavResource(TestCase):
     def test_get_abs_path(self):
         self.assertEquals(self.resource.get_abs_path(), '/some/folder/path/to/name')
 
+    @patch('djangodav.fs.resources.os.path.isdir')
     @patch('djangodav.fs.resources.os.listdir')
-    def test_get_children(self, listdir):
+    def test_get_children(self, listdir, isdir):
         listdir.return_value=['child1', 'child2']
         children = list(self.resource.get_children())
         self.assertEqual(children[0].path, ['path', 'to', 'name', 'child1'])
