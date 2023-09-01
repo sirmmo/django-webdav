@@ -19,13 +19,23 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
 
-*.log
-*.pot
-*.pyc
-env
-env3
-.idea
-.vscode
-*.sqlite
-migrations
-__pycache__
+
+class BaseLock(object):
+    def __init__(self, resource):
+        self.resource = resource
+
+    def get(self):
+        """Gets all active locks for the requested resource. Returns a list of locks."""
+        raise NotImplementedError()
+
+    def acquire(self, lockscope, locktype, depth, timeout, owner):
+        """Creates a new lock for the given resource."""
+        raise NotImplementedError()
+
+    def release(self, token):
+        """Releases the lock referenced by the given lock id."""
+        raise NotImplementedError()
+
+    def del_locks(self):
+        """Releases all locks for the given resource."""
+        raise NotImplementedError()

@@ -18,14 +18,25 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
+from django.http import HttpResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from djangodav.responses import HttpResponseUnAuthorized
 
-*.log
-*.pot
-*.pyc
-env
-env3
-.idea
-.vscode
-*.sqlite
-migrations
-__pycache__
+
+class TastypieAuthViewMixIn(object):
+    authentication = NotImplemented
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+
+        if request.method.lower() != 'options':
+            auth_result = self.authentication.is_authenticated(request)
+
+            if isinstance(auth_result, HttpResponse):
+                return auth_result
+
+            if auth_result is not True:
+                return HttpResponseUnAuthorized()
+
+        return super(TastypieAuthViewMixIn, self).dispatch(request, *args, **kwargs)

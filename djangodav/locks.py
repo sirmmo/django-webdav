@@ -18,14 +18,22 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
+from uuid import uuid4
 
-*.log
-*.pot
-*.pyc
-env
-env3
-.idea
-.vscode
-*.sqlite
-migrations
-__pycache__
+from django.utils.encoding import force_text
+
+from djangodav.base.locks import BaseLock
+
+
+class DummyLock(BaseLock):
+    def get(self, *args, **kwargs):
+        pass
+
+    def acquire(self, *args, **kwargs):
+        return force_text(uuid4())
+
+    def release(self, token):
+        return True
+
+    def del_locks(self):
+        pass

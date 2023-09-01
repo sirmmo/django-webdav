@@ -1,0 +1,15 @@
+language: python
+python:
+  - "2.7"
+  - "3.8"
+env:
+  - DJANGO_VERSION=1.11.29
+  - DJANGO_VERSION=3.1.2
+matrix:
+  exclude:
+   - python: "2.7"
+     env: DJANGO_VERSION=3.1.2
+   - python: "3.8"
+     env: DJANGO_VERSION=1.11.29
+install: pip install -q Django==$DJANGO_VERSION djangorestframework mock lxml
+script: python setup.py test

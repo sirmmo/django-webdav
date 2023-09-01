@@ -1,23 +1,30 @@
+# Portions (c) 2014, Alexander Klimenko <alex@erix.ru>
+# All rights reserved.
+#
 # Copyright (c) 2011, SmartFile <btimby@smartfile.com>
 # All rights reserved.
 #
-# This file is part of django-webdav.
+# This file is part of DjangoDav.
 #
-# Foobar is free software: you can redistribute it and/or modify
+# DjangoDav is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
 # by the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Foobar is distributed in the hope that it will be useful,
+# DjangoDav is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with django-webdav.  If not, see <http://www.gnu.org/licenses/>.
+# along with DjangoDav.  If not, see <http://www.gnu.org/licenses/>.
+
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__name__)))
 
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
+DEBUG_PROPAGATE_EXCEPTIONS = DEBUG
 
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
@@ -27,8 +34,8 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': '',                      # Or path to database file if using sqlite3.
+        'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': 'sample.sqlite',                      # Or path to database file if using sqlite3.
         'USER': '',                      # Not used with sqlite3.
         'PASSWORD': '',                  # Not used with sqlite3.
         'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
@@ -76,13 +83,6 @@ ADMIN_MEDIA_PREFIX = '/media/'
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '7*2a!%^qk_t05mopm0u@u9_)p-hcb7fy(1usg4^yi9%epjz%$y'
 
-# List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
-)
-
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -93,11 +93,23 @@ MIDDLEWARE_CLASSES = (
 
 ROOT_URLCONF = 'samples.urls'
 
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            os.path.join(BASE_DIR, 'djangodav/templates'),
+        ],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -105,31 +117,37 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
-    'django_webdav',
+    'djangodav',
+    'samples.db',
     # Uncomment the next line to enable the admin:
     # 'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
 )
 
-# Define the directory to be exported. I am exporting my home directory... Weee!
-DAV_ROOT = '/home/btimby'
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse'
+        }
+    },
+    'handlers': {
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'class': 'django.utils.log.AdminEmailHandler'
+        }
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    }
+}
 
-# Set DAV_USE_SENDFILE to offload file sends. Multiple methods are supported.
-
-# *~*~*~*~ For Lighttpd and Apache2 (with mod_xsendfile) *~*~*~*~
-# * Send an X-SendFile header. The second optional parameter indicates that
-#   the path should be escaped (for non-ascii values). Newer versions of
-#   mod_xsendfile support this, the ability is toggled using the XSendFileUnescape
-#   setting in httpd.conf/apache2.conf but enabled by default.
-# DAV_USE_SENDFILE = 'X-SendFile escape'
-
-# *~*~*~*~ For Nginx *~*~*~*~
-#   You must provide your base_url (the second param). See Nginx docs for
-#   info - http://wiki.nginx.org/XSendfile
-# DAV_USE_SENDFILE = 'X-Accel-Redirect http://localhost/private'
-
-# *~*~*~*~ For Django development server *~*~*~*~
-# * Just pass an iterator to Django so it can send the file.
-#   !! NOT RECOMMENDED FOR PRODUCTION !!
-DAV_USE_SENDFILE = False
+from tempfile import gettempdir
+WEBDAV_ROOT = gettempdir()

@@ -1,0 +1,4 @@
+django
+django-tastypie
+djangorestframework
+lxml
